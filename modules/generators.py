@@ -224,10 +224,6 @@ def formatar_cpf(cpf):
 
 def gerar_cnpj_teste():
 
-    # ==========================================
-    # CNPJ FICTÍCIO — DÍGITOS VERIFICADORES
-    # ==========================================
-
     # Gera os 12 primeiros dígitos
     numeros = [
         random.randint(0, 9)
@@ -236,7 +232,6 @@ def gerar_cnpj_teste():
 
     # ==========================================
     # 1º DÍGITO VERIFICADOR
-    # Pesos: 5,4,3,2,9,8,7,6,5,4,3,2
     # ==========================================
 
     pesos = [
@@ -261,7 +256,6 @@ def gerar_cnpj_teste():
 
     # ==========================================
     # 2º DÍGITO VERIFICADOR
-    # Pesos: 6,5,4,3,2,9,8,7,6,5,4,3,2
     # ==========================================
 
     pesos = [
@@ -283,13 +277,23 @@ def gerar_cnpj_teste():
 
     numeros.append(segundo_digito)
 
-    # Retorna os 14 dígitos
     return "".join(
         str(numero)
         for numero in numeros
     )
 
 
+def formatar_cnpj(cnpj):
+
+    cnpj = str(cnpj).zfill(14)
+
+    return (
+        f"{cnpj[:2]}."
+        f"{cnpj[2:5]}."
+        f"{cnpj[5:8]}/"
+        f"{cnpj[8:12]}-"
+        f"{cnpj[12:]}"
+    )
 # ==========================================
 # RG
 # ==========================================
