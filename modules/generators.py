@@ -31,6 +31,7 @@ def carregar_lista(nome_arquivo):
     )
 
     try:
+
         with open(
             caminho,
             "r",
@@ -43,7 +44,11 @@ def carregar_lista(nome_arquivo):
                 if linha.strip()
             ]
 
-    except FileNotFoundError:
+    except (
+        FileNotFoundError,
+        OSError,
+        UnicodeError
+    ):
 
         return []
 
@@ -64,12 +69,16 @@ def gerar_nome():
 
 def gerar_sobrenome():
 
-    sobrenomes = carregar_lista("surnames.txt")
+    sobrenomes = carregar_lista(
+        "surnames.txt"
+    )
 
     if not sobrenomes:
         return "Sobrenome"
 
-    return random.choice(sobrenomes)
+    return random.choice(
+        sobrenomes
+    )
 
 
 def gerar_nome_completo():
@@ -127,45 +136,91 @@ def gerar_data_nascimento(
 
 
 # ==========================================
-# CPF DE TESTE
+# IDENTIFICADOR NUMÉRICO DE TESTE
+# ==========================================
+
+def gerar_numero_teste(
+    quantidade
+):
+
+    return "".join(
+        str(random.randint(0, 9))
+        for _ in range(quantidade)
+    )
+
+
+# ==========================================
+# CPF FICTÍCIO
 # ==========================================
 
 def gerar_cpf_teste():
 
-    numero = "".join(
-        str(random.randint(0, 9))
-        for _ in range(9)
-    )
+    # 11 dígitos numéricos.
+    # Mantido como dado fictício e marcado
+    # como TESTE na apresentação.
 
-    return "TESTE-CPF-" + numero
+    numero = gerar_numero_teste(11)
+
+    return numero
+
+
+def formatar_cpf_teste(cpf):
+
+    cpf = str(cpf).zfill(11)
+
+    return (
+        f"{cpf[:3]}."
+        f"{cpf[3:6]}."
+        f"{cpf[6:9]}-"
+        f"{cpf[9:]}"
+    )
 
 
 # ==========================================
-# CNPJ DE TESTE
+# CNPJ FICTÍCIO
 # ==========================================
 
 def gerar_cnpj_teste():
 
-    numero = "".join(
-        str(random.randint(0, 9))
-        for _ in range(12)
-    )
+    # 14 dígitos numéricos fictícios.
 
-    return "TESTE-CNPJ-" + numero
+    return gerar_numero_teste(14)
+
+
+def formatar_cnpj_teste(cnpj):
+
+    cnpj = str(cnpj).zfill(14)
+
+    return (
+        f"{cnpj[:2]}."
+        f"{cnpj[2:5]}."
+        f"{cnpj[5:8]}/"
+        f"{cnpj[8:12]}-"
+        f"{cnpj[12:]}"
+    )
 
 
 # ==========================================
-# RG DE TESTE
+# RG FICTÍCIO
 # ==========================================
 
 def gerar_rg_teste():
 
-    numero = "".join(
-        str(random.randint(0, 9))
-        for _ in range(8)
-    )
+    # RG fictício com 9 posições numéricas.
 
-    return "TESTE-RG-" + numero
+    return gerar_numero_teste(9)
+
+
+def formatar_rg_teste(rg):
+
+    rg = str(rg).zfill(9)
+
+    return (
+        f"{rg[:2]}."
+        f"{rg[2:5]}."
+        f"{rg[5:8]}-"
+        f"{rg[8]}"
+    )
 
 
 # ==========================================
@@ -189,7 +244,10 @@ def gerar_data_emissao(
             dia
         )
 
-    except ValueError:
+    except (
+        ValueError,
+        TypeError
+    ):
 
         return date.today().strftime(
             "%d/%m/%Y"
@@ -205,7 +263,6 @@ def gerar_data_emissao(
     )
 
     if idade_18 > hoje:
-
         idade_18 = hoje
 
     intervalo = (
@@ -234,7 +291,7 @@ def gerar_data_emissao(
 
 
 # ==========================================
-# IDENTIDADE
+# IDENTIDADE FICTÍCIA
 # ==========================================
 
 def gerar_identidade_teste():
@@ -295,6 +352,14 @@ def mostrar_identidade_teste():
 
     dados = gerar_identidade_teste()
 
+    cpf = formatar_cpf_teste(
+        dados["cpf"]
+    )
+
+    rg = formatar_rg_teste(
+        dados["rg"]
+    )
+
     print(
         "\n╔══════════════════════════════════════════╗"
     )
@@ -312,31 +377,38 @@ def mostrar_identidade_teste():
     )
 
     print(
-        f"║ Nascimento: {dados['nascimento']:<25} ║"
+        f"║ Nascimento: "
+        f"{dados['nascimento']:<25} ║"
     )
 
     print(
-        f"║ CPF: {dados['cpf']:<31} ║"
+        f"║ CPF TESTE: "
+        f"{cpf:<25} ║"
     )
 
     print(
-        f"║ RG: {dados['rg']:<32} ║"
+        f"║ RG TESTE: "
+        f"{rg:<26} ║"
     )
 
     print(
-        f"║ Emissão: {dados['emissao']:<27} ║"
+        f"║ Emissão: "
+        f"{dados['emissao']:<27} ║"
     )
 
     print(
-        f"║ Sexo: {dados['sexo']:<30} ║"
+        f"║ Sexo: "
+        f"{dados['sexo']:<30} ║"
     )
 
     print(
-        f"║ UF: {dados['uf']:<33} ║"
+        f"║ UF: "
+        f"{dados['uf']:<33} ║"
     )
 
     print(
-        f"║ Estado: {dados['estado']:<29} ║"
+        f"║ Estado: "
+        f"{dados['estado']:<29} ║"
     )
 
     print(
@@ -407,22 +479,26 @@ def menu_geradores():
 
         if opcao == "1":
 
+            cpf = gerar_cpf_teste()
+
             print(
-                "\n[+] CPF de teste:"
+                "\n[+] CPF TESTE:"
             )
 
             print(
-                gerar_cpf_teste()
+                formatar_cpf_teste(cpf)
             )
 
         elif opcao == "2":
 
+            cnpj = gerar_cnpj_teste()
+
             print(
-                "\n[+] CNPJ de teste:"
+                "\n[+] CNPJ TESTE:"
             )
 
             print(
-                gerar_cnpj_teste()
+                formatar_cnpj_teste(cnpj)
             )
 
         elif opcao == "3":
