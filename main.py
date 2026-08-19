@@ -226,3 +226,5 @@ def atualizar_painel():
             "Pressione ENTER para voltar..."
             f"{RESET}"
         )
+if __name__ == "__main__":
+    main()
