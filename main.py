@@ -8,6 +8,8 @@ import sys
 import socket
 import urllib.request
 import urllib.error
+import subprocess
+import time
 
 from modules.generators import menu_geradores
 from modules.consultas import menu_consultas
@@ -25,6 +27,7 @@ WHITE = "\033[97m"
 BLUE = "\033[94m"
 GREEN = "\033[92m"
 RED = "\033[91m"
+YELLOW = "\033[93m"
 GRAY = "\033[90m"
 
 
@@ -233,6 +236,205 @@ def meu_ip_publico():
 
 
 # ==========================================
+# ATUALIZAR PAINEL
+# ==========================================
+
+def atualizar_painel():
+
+    limpar_tela()
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╔══════════════════════════════════════╗"
+        f"{RESET}"
+    )
+
+    print(
+        f"{BLUE}{BOLD}"
+        "║          ATUALIZAR PAINEL           ║"
+        f"{RESET}"
+    )
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╠══════════════════════════════════════╣"
+        f"{RESET}"
+    )
+
+    print(
+        f"{WHITE}║                                      ║{RESET}"
+    )
+
+    print(
+        f"{WHITE}║      CONKS CYBER UPDATE SYSTEM       ║{RESET}"
+    )
+
+    print(
+        f"{WHITE}║                                      ║{RESET}"
+    )
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╚══════════════════════════════════════╝"
+        f"{RESET}"
+    )
+
+    print(
+        f"\n{BLUE}[~] Verificando atualizações...{RESET}"
+    )
+
+    time.sleep(0.7)
+
+    try:
+
+        resultado = subprocess.run(
+            [
+                "git",
+                "pull",
+                "origin",
+                "main"
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        saida = (
+            resultado.stdout +
+            resultado.stderr
+        )
+
+        if resultado.returncode != 0:
+
+            print(
+                f"\n{RED}[-] Não foi possível "
+                f"atualizar o painel.{RESET}"
+            )
+
+            if saida.strip():
+
+                print(
+                    f"\n{GRAY}"
+                    f"{saida.strip()}"
+                    f"{RESET}"
+                )
+
+        elif (
+            "Already up to date" in saida
+            or "Already up-to-date" in saida
+        ):
+
+            print(
+                f"\n{YELLOW}{BOLD}"
+                "╔══════════════════════════════════════╗"
+                f"{RESET}"
+            )
+
+            print(
+                f"{YELLOW}{BOLD}"
+                "║                                      ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{YELLOW}{BOLD}"
+                "║  O PAINEL ESTÁ NA VERSÃO MAIS       ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{YELLOW}{BOLD}"
+                "║  RECENTE                              ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{YELLOW}{BOLD}"
+                "║                                      ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{YELLOW}{BOLD}"
+                "╚══════════════════════════════════════╝"
+                f"{RESET}"
+            )
+
+        else:
+
+            print(
+                f"\n{GREEN}{BOLD}"
+                "╔══════════════════════════════════════╗"
+                f"{RESET}"
+            )
+
+            print(
+                f"{GREEN}{BOLD}"
+                "║       ATUALIZAÇÃO CONCLUÍDA!        ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{GREEN}{BOLD}"
+                "╠══════════════════════════════════════╣"
+                f"{RESET}"
+            )
+
+            print(
+                f"{GREEN}"
+                "║ O painel foi atualizado com sucesso. ║"
+                f"{RESET}"
+            )
+
+            print(
+                f"{GREEN}{BOLD}"
+                "╚══════════════════════════════════════╝"
+                f"{RESET}"
+            )
+
+            print(
+                f"\n{GRAY}"
+                "Alterações recebidas do GitHub:"
+                f"{RESET}"
+            )
+
+            if saida.strip():
+
+                print(
+                    f"{GRAY}"
+                    f"{saida.strip()}"
+                    f"{RESET}"
+                )
+
+    except subprocess.TimeoutExpired:
+
+        print(
+            f"\n{RED}[-] A atualização demorou "
+            f"demais e foi cancelada.{RESET}"
+        )
+
+    except FileNotFoundError:
+
+        print(
+            f"\n{RED}[-] Git não está instalado "
+            f"neste dispositivo.{RESET}"
+        )
+
+    except Exception as erro_inesperado:
+
+        print(
+            f"\n{RED}[-] Erro ao atualizar: "
+            f"{erro_inesperado}{RESET}"
+        )
+
+    input(
+        f"\n{GRAY}"
+        "Pressione ENTER para voltar..."
+        f"{RESET}"
+    )
+
+
+# ==========================================
 # MENU REDE
 # ==========================================
 
@@ -362,6 +564,12 @@ def menu_principal():
         )
 
         print(
+            f"{BLUE}{BOLD}"
+            "║ [7] Atualizar painel                ║"
+            f"{RESET}"
+        )
+
+        print(
             f"{WHITE}║                                      ║{RESET}"
         )
 
@@ -474,6 +682,14 @@ def menu_principal():
                 input(
                     "\nPressione ENTER para continuar..."
                 )
+
+        # ==================================
+        # ATUALIZAR PAINEL
+        # ==================================
+
+        elif opcao == "7":
+
+            atualizar_painel()
 
         # ==================================
         # SAIR
