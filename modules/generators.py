@@ -151,22 +151,55 @@ def numero_ficticio(tamanho):
 
 def gerar_cpf_teste():
 
-    # Mantém 11 dígitos.
-    # O último dígito é alterado para
-    # garantir que o CPF seja inválido.
+    # ==========================================
+    # CPF FICTÍCIO — DÍGITOS VERIFICADORES
+    # ==========================================
 
+    # Gera os 9 primeiros dígitos
     numeros = [
         random.randint(0, 9)
-        for _ in range(10)
+        for _ in range(9)
     ]
 
-    # Dígito propositalmente incompatível.
-    digito = (
-        (sum(numeros) + 1) % 10
-    )
+    # ==========================================
+    # 1º DÍGITO VERIFICADOR
+    # Pesos: 10, 9, 8, 7, 6, 5, 4, 3, 2
+    # ==========================================
 
-    numeros.append(digito)
+    soma = 0
 
+    for i in range(9):
+        soma += numeros[i] * (10 - i)
+
+    resto = soma % 11
+
+    if resto < 2:
+        primeiro_digito = 0
+    else:
+        primeiro_digito = 11 - resto
+
+    numeros.append(primeiro_digito)
+
+    # ==========================================
+    # 2º DÍGITO VERIFICADOR
+    # Pesos: 11, 10, 9, 8, 7, 6, 5, 4, 3, 2
+    # ==========================================
+
+    soma = 0
+
+    for i in range(10):
+        soma += numeros[i] * (11 - i)
+
+    resto = soma % 11
+
+    if resto < 2:
+        segundo_digito = 0
+    else:
+        segundo_digito = 11 - resto
+
+    numeros.append(segundo_digito)
+
+    # Retorna os 11 dígitos
     return "".join(
         str(numero)
         for numero in numeros
