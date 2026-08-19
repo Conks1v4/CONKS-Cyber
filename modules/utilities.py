@@ -8,7 +8,10 @@ import platform
 import socket
 import shutil
 import subprocess
-import sys
+import uuid
+import secrets
+import string
+import math
 from datetime import datetime
 
 
@@ -47,12 +50,24 @@ def erro(texto):
     print(f"{RED}[-] {texto}{RESET}")
 
 
+def aviso(texto):
+    print(f"{YELLOW}[!] {texto}{RESET}")
+
+
 def info(texto):
     print(f"{BLUE}[i] {texto}{RESET}")
 
 
-def aviso(texto):
-    print(f"{YELLOW}[!] {texto}{RESET}")
+# ==========================================
+# PAUSA
+# ==========================================
+
+def pausar():
+    input(
+        f"\n{GRAY}"
+        "Pressione ENTER para continuar..."
+        f"{RESET}"
+    )
 
 
 # ==========================================
@@ -68,38 +83,30 @@ def informacoes_sistema():
         "╔══════════════════════════════════════╗"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
-        "║          INFORMAÇÕES DO SISTEMA     ║"
+        "║        INFORMAÇÕES DO SISTEMA        ║"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
         "╠══════════════════════════════════════╣"
         f"{RESET}"
     )
 
-    sistema = platform.system()
-    versao = platform.release()
-    arquitetura = platform.machine()
-    python = platform.python_version()
-    hostname = socket.gethostname()
-
     dados = [
-        ("Sistema", sistema),
-        ("Versão", versao),
-        ("Arquitetura", arquitetura),
-        ("Python", python),
-        ("Hostname", hostname)
+        ("Sistema", platform.system()),
+        ("Versão", platform.release()),
+        ("Arquitetura", platform.machine()),
+        ("Python", platform.python_version()),
+        ("Hostname", socket.gethostname())
     ]
 
     for nome, valor in dados:
+        valor = str(valor)[:20]
 
         print(
-            f"{WHITE}║ {nome:<15}: "
-            f"{str(valor)[:20]:<20} ║{RESET}"
+            f"{WHITE}║ {nome:<15}: {valor:<20} ║{RESET}"
         )
 
     print(
@@ -110,7 +117,7 @@ def informacoes_sistema():
 
 
 # ==========================================
-# USO DE ARMAZENAMENTO
+# ARMAZENAMENTO
 # ==========================================
 
 def uso_armazenamento():
@@ -122,13 +129,11 @@ def uso_armazenamento():
         "╔══════════════════════════════════════╗"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
-        "║          ARMAZENAMENTO               ║"
+        "║           ARMAZENAMENTO              ║"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
         "╠══════════════════════════════════════╣"
@@ -141,26 +146,26 @@ def uso_armazenamento():
 
         gb = 1024 ** 3
 
-        total_gb = total / gb
-        usado_gb = usado / gb
-        livre_gb = livre / gb
-
         print(
-            f"{WHITE}║ Total: "
-            f"{total_gb:.2f} GB"
-            f"{'':>18}║{RESET}"
+            f"{WHITE}║ Total:    {total / gb:>8.2f} GB             ║{RESET}"
         )
 
         print(
-            f"{WHITE}║ Usado: "
-            f"{usado_gb:.2f} GB"
-            f"{'':>18}║{RESET}"
+            f"{WHITE}║ Usado:    {usado / gb:>8.2f} GB             ║{RESET}"
         )
 
         print(
-            f"{WHITE}║ Livre: "
-            f"{livre_gb:.2f} GB"
-            f"{'':>18}║{RESET}"
+            f"{WHITE}║ Livre:    {livre / gb:>8.2f} GB             ║{RESET}"
+        )
+
+        porcentagem = (
+            usado / total * 100
+            if total
+            else 0
+        )
+
+        print(
+            f"{WHITE}║ Uso:      {porcentagem:>8.2f}%              ║{RESET}"
         )
 
     except OSError:
@@ -191,13 +196,11 @@ def data_hora():
         "╔══════════════════════════════════════╗"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
-        "║             DATA E HORA              ║"
+        "║              DATA E HORA             ║"
         f"{RESET}"
     )
-
     print(
         f"{BLUE}{BOLD}"
         "╠══════════════════════════════════════╣"
@@ -205,18 +208,15 @@ def data_hora():
     )
 
     print(
-        f"{WHITE}║ Data: "
-        f"{agora.strftime('%d/%m/%Y'):<28}║{RESET}"
+        f"{WHITE}║ Data: {agora.strftime('%d/%m/%Y'):<28} ║{RESET}"
     )
 
     print(
-        f"{WHITE}║ Hora: "
-        f"{agora.strftime('%H:%M:%S'):<28}║{RESET}"
+        f"{WHITE}║ Hora: {agora.strftime('%H:%M:%S'):<28} ║{RESET}"
     )
 
     print(
-        f"{WHITE}║ Dia: "
-        f"{agora.strftime('%A'):<29}║{RESET}"
+        f"{WHITE}║ Timestamp: {int(agora.timestamp()):<21} ║{RESET}"
     )
 
     print(
@@ -227,7 +227,346 @@ def data_hora():
 
 
 # ==========================================
-# TESTE DE PING
+# CALCULADORA
+# ==========================================
+
+def calculadora():
+
+    while True:
+
+        limpar_tela()
+
+        print(
+            f"{BLUE}{BOLD}"
+            "╔══════════════════════════════════════╗"
+            f"{RESET}"
+        )
+        print(
+            f"{BLUE}{BOLD}"
+            "║             CALCULADORA              ║"
+            f"{RESET}"
+        )
+        print(
+            f"{BLUE}{BOLD}"
+            "╠══════════════════════════════════════╣"
+            f"{RESET}"
+        )
+
+        print(
+            f"{WHITE}║ Exemplos:                            ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ 10 + 5                               ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ 20 * 3                               ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ (10 + 5) / 3                         ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ 2 ** 8                               ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ digite 0 para voltar                 ║{RESET}"
+        )
+
+        print(
+            f"{BLUE}{BOLD}"
+            "╚══════════════════════════════════════╝"
+            f"{RESET}"
+        )
+
+        expressao = input(
+            f"\n{BLUE}{BOLD}"
+            "CONKS@Calculadora > "
+            f"{RESET}"
+        ).strip()
+
+        if expressao == "0":
+            return
+
+        if not expressao:
+            erro("Digite uma expressão.")
+            pausar()
+            continue
+
+        permitidos = set(
+            "0123456789+-*/().% "
+        )
+
+        if any(
+            caractere not in permitidos
+            for caractere in expressao
+        ):
+
+            erro(
+                "A expressão contém caracteres não permitidos."
+            )
+
+            pausar()
+            continue
+
+        try:
+
+            resultado = eval(
+                expressao,
+                {
+                    "__builtins__": {}
+                },
+                {}
+            )
+
+            if isinstance(resultado, float):
+
+                resultado = round(
+                    resultado,
+                    10
+                )
+
+            print(
+                f"\n{GREEN}{BOLD}"
+                f"[+] Resultado: {resultado}"
+                f"{RESET}"
+            )
+
+        except ZeroDivisionError:
+
+            erro(
+                "Não é possível dividir por zero."
+            )
+
+        except Exception:
+
+            erro(
+                "Expressão inválida."
+            )
+
+        pausar()
+
+
+# ==========================================
+# GERADOR DE SENHA
+# ==========================================
+
+def gerar_senha():
+
+    limpar_tela()
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╔══════════════════════════════════════╗"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "║           GERADOR DE SENHA           ║"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "╠══════════════════════════════════════╣"
+        f"{RESET}"
+    )
+
+    entrada = input(
+        "\nTamanho da senha [padrão 16]: "
+    ).strip()
+
+    if not entrada:
+        tamanho = 16
+    else:
+
+        try:
+            tamanho = int(entrada)
+        except ValueError:
+            erro("Digite um número válido.")
+            return
+
+    if tamanho < 4 or tamanho > 128:
+
+        erro(
+            "O tamanho deve estar entre 4 e 128."
+        )
+
+        return
+
+    caracteres = (
+        string.ascii_letters +
+        string.digits +
+        "!@#$%&*+-_"
+    )
+
+    senha = "".join(
+        secrets.choice(caracteres)
+        for _ in range(tamanho)
+    )
+
+    print(
+        f"\n{GREEN}{BOLD}"
+        f"Senha: {senha}"
+        f"{RESET}"
+    )
+
+
+# ==========================================
+# UUID
+# ==========================================
+
+def gerar_uuid():
+
+    limpar_tela()
+
+    identificador = uuid.uuid4()
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╔══════════════════════════════════════╗"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "║              GERAR UUID              ║"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "╠══════════════════════════════════════╣"
+        f"{RESET}"
+    )
+
+    print(
+        f"{GREEN}UUID: {identificador}{RESET}"
+    )
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╚══════════════════════════════════════╝"
+        f"{RESET}"
+    )
+
+
+# ==========================================
+# CONVERSOR DE UNIDADES
+# ==========================================
+
+def conversor_unidades():
+
+    while True:
+
+        limpar_tela()
+
+        print(
+            f"{BLUE}{BOLD}"
+            "╔══════════════════════════════════════╗"
+            f"{RESET}"
+        )
+        print(
+            f"{BLUE}{BOLD}"
+            "║          CONVERSOR DE UNIDADES       ║"
+            f"{RESET}"
+        )
+        print(
+            f"{BLUE}{BOLD}"
+            "╠══════════════════════════════════════╣"
+            f"{RESET}"
+        )
+
+        print(
+            f"{WHITE}║ [1] Metros → Quilômetros             ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ [2] Quilômetros → Metros             ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ [3] Bytes → KB/MB/GB                 ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ [4] Celsius → Fahrenheit             ║{RESET}"
+        )
+        print(
+            f"{WHITE}║ [5] Fahrenheit → Celsius              ║{RESET}"
+        )
+        print(
+            f"{RED}║ [0] Voltar                           ║{RESET}"
+        )
+
+        print(
+            f"{BLUE}{BOLD}"
+            "╚══════════════════════════════════════╝"
+            f"{RESET}"
+        )
+
+        opcao = input(
+            "\nCONKS@Conversor > "
+        ).strip()
+
+        if opcao == "0":
+            return
+
+        try:
+
+            valor = float(
+                input("Valor: ").strip()
+            )
+
+        except ValueError:
+
+            erro("Valor inválido.")
+            pausar()
+            continue
+
+        if opcao == "1":
+
+            print(
+                f"{GREEN}{valor / 1000:g} km{RESET}"
+            )
+
+        elif opcao == "2":
+
+            print(
+                f"{GREEN}{valor * 1000:g} m{RESET}"
+            )
+
+        elif opcao == "3":
+
+            print(
+                f"{GREEN}"
+                f"{valor / 1024:.2f} KB | "
+                f"{valor / 1024**2:.2f} MB | "
+                f"{valor / 1024**3:.2f} GB"
+                f"{RESET}"
+            )
+
+        elif opcao == "4":
+
+            resultado = (
+                valor * 9 / 5
+            ) + 32
+
+            print(
+                f"{GREEN}{resultado:.2f} °F{RESET}"
+            )
+
+        elif opcao == "5":
+
+            resultado = (
+                valor - 32
+            ) * 5 / 9
+
+            print(
+                f"{GREEN}{resultado:.2f} °C{RESET}"
+            )
+
+        else:
+
+            erro("Opção inválida.")
+
+        pausar()
+
+
+# ==========================================
+# TESTAR PING
 # ==========================================
 
 def testar_ping():
@@ -241,32 +580,19 @@ def testar_ping():
     if not host:
 
         erro("Digite um endereço.")
-
         return
-
-    print(
-        f"\n{BLUE}[~] Testando conexão...{RESET}"
-    )
 
     sistema = platform.system().lower()
 
-    if sistema == "windows":
+    comando = (
+        ["ping", "-n", "1", host]
+        if sistema == "windows"
+        else ["ping", "-c", "1", host]
+    )
 
-        comando = [
-            "ping",
-            "-n",
-            "1",
-            host
-        ]
-
-    else:
-
-        comando = [
-            "ping",
-            "-c",
-            "1",
-            host
-        ]
+    print(
+        f"\n{BLUE}[~] Testando {host}...{RESET}"
+    )
 
     try:
 
@@ -286,7 +612,7 @@ def testar_ping():
         else:
 
             erro(
-                f"{host} não respondeu ao ping."
+                f"{host} não respondeu."
             )
 
     except FileNotFoundError:
@@ -301,15 +627,9 @@ def testar_ping():
             "Tempo limite excedido."
         )
 
-    except OSError as exc:
-
-        erro(
-            f"Erro ao executar ping: {exc}"
-        )
-
 
 # ==========================================
-# RESOLVER DNS
+# DNS
 # ==========================================
 
 def resolver_dns():
@@ -323,7 +643,6 @@ def resolver_dns():
     if not dominio:
 
         erro("Digite um domínio.")
-
         return
 
     try:
@@ -335,49 +654,24 @@ def resolver_dns():
 
         ips = []
 
-        for info_item in infos:
+        for item in infos:
 
-            endereco = info_item[4][0]
+            ip = item[4][0]
 
-            if endereco not in ips:
-
-                ips.append(endereco)
+            if ip not in ips:
+                ips.append(ip)
 
         print(
-            f"\n{BLUE}{BOLD}"
-            "╔══════════════════════════════════════╗"
+            f"\n{GREEN}{BOLD}"
+            f"[+] {dominio}"
             f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "║              DNS LOOKUP              ║"
-            f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╠══════════════════════════════════════╣"
-            f"{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ Domínio: "
-            f"{dominio:<26}║{RESET}"
         )
 
         for ip in ips:
 
             print(
-                f"{GREEN}║ IP: "
-                f"{ip:<31}║{RESET}"
+                f"{WHITE}  └─ {ip}{RESET}"
             )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╚══════════════════════════════════════╝"
-            f"{RESET}"
-        )
 
     except socket.gaierror:
 
@@ -401,32 +695,25 @@ def verificar_porta():
     if not host:
 
         erro("Digite um host.")
-
         return
-
-    porta_texto = input(
-        "Porta: "
-    ).strip()
 
     try:
 
-        porta = int(porta_texto)
+        porta = int(
+            input("Porta: ").strip()
+        )
 
-        if porta < 1 or porta > 65535:
+        if not 1 <= porta <= 65535:
 
             raise ValueError
 
     except ValueError:
 
         erro(
-            "A porta deve estar entre 1 e 65535."
+            "Porta inválida."
         )
 
         return
-
-    print(
-        f"\n{BLUE}[~] Verificando porta {porta}...{RESET}"
-    )
 
     try:
 
@@ -456,106 +743,12 @@ def verificar_porta():
     except socket.gaierror:
 
         erro(
-            "Host inválido ou não resolvido."
-        )
-
-    except OSError as exc:
-
-        erro(
-            f"Erro de conexão: {exc}"
+            "Host não encontrado."
         )
 
 
 # ==========================================
-# CALCULADORA
-# ==========================================
-
-def calculadora():
-
-    limpar_tela()
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╔══════════════════════════════════════╗"
-        f"{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "║             CALCULADORA              ║"
-        f"{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╠══════════════════════════════════════╣"
-        f"{RESET}"
-    )
-
-    print(
-        f"{WHITE}║ Digite uma expressão simples.        ║{RESET}"
-    )
-
-    print(
-        f"{WHITE}║ Exemplos: 10 + 5 / 20 * 3            ║{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╚══════════════════════════════════════╝"
-        f"{RESET}"
-    )
-
-    expressao = input(
-        "\nExpressão: "
-    ).strip()
-
-    if not expressao:
-
-        erro("Nenhuma expressão informada.")
-
-        return
-
-    permitidos = set(
-        "0123456789+-*/().% "
-    )
-
-    if any(
-        caractere not in permitidos
-        for caractere in expressao
-    ):
-
-        erro(
-            "Expressão contém caracteres não permitidos."
-        )
-
-        return
-
-    try:
-
-        resultado = eval(
-            expressao,
-            {
-                "__builtins__": {}
-            },
-            {}
-        )
-
-        print(
-            f"\n{GREEN}{BOLD}"
-            f"Resultado: {resultado}"
-            f"{RESET}"
-        )
-
-    except Exception:
-
-        erro(
-            "Não foi possível calcular a expressão."
-        )
-
-
-# ==========================================
-# VERIFICAR ARQUIVO/DIRETÓRIO
+# VERIFICAR ARQUIVO
 # ==========================================
 
 def verificar_caminho():
@@ -563,44 +756,29 @@ def verificar_caminho():
     limpar_tela()
 
     caminho = input(
-        "\nDigite o caminho: "
+        "\nCaminho: "
     ).strip()
 
     if not caminho:
 
         erro("Digite um caminho.")
-
         return
 
-    caminho = os.path.expanduser(
-        caminho
-    )
+    caminho = os.path.expanduser(caminho)
 
     if os.path.isfile(caminho):
 
-        try:
+        tamanho = os.path.getsize(caminho)
 
-            tamanho = os.path.getsize(
-                caminho
-            )
+        sucesso("Arquivo encontrado.")
 
-            print(
-                f"\n{GREEN}[+] Arquivo encontrado.{RESET}"
-            )
+        print(
+            f"{WHITE}Caminho: {caminho}{RESET}"
+        )
 
-            print(
-                f"{WHITE}Caminho: {caminho}{RESET}"
-            )
-
-            print(
-                f"{WHITE}Tamanho: {tamanho} bytes{RESET}"
-            )
-
-        except OSError:
-
-            erro(
-                "Não foi possível obter informações do arquivo."
-            )
+        print(
+            f"{WHITE}Tamanho: {tamanho} bytes{RESET}"
+        )
 
     elif os.path.isdir(caminho):
 
@@ -610,9 +788,7 @@ def verificar_caminho():
                 os.listdir(caminho)
             )
 
-            print(
-                f"\n{GREEN}[+] Diretório encontrado.{RESET}"
-            )
+            sucesso("Diretório encontrado.")
 
             print(
                 f"{WHITE}Caminho: {caminho}{RESET}"
@@ -625,7 +801,7 @@ def verificar_caminho():
         except OSError:
 
             erro(
-                "Não foi possível ler o diretório."
+                "Não foi possível acessar o diretório."
             )
 
     else:
@@ -633,6 +809,83 @@ def verificar_caminho():
         aviso(
             "Arquivo ou diretório não encontrado."
         )
+
+
+# ==========================================
+# CONECTIVIDADE
+# ==========================================
+
+def verificar_conectividade():
+
+    limpar_tela()
+
+    destinos = [
+        ("Google", "google.com", 443),
+        ("Cloudflare", "cloudflare.com", 443),
+        ("GitHub", "github.com", 443)
+    ]
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╔══════════════════════════════════════╗"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "║         TESTE DE CONECTIVIDADE      ║"
+        f"{RESET}"
+    )
+    print(
+        f"{BLUE}{BOLD}"
+        "╠══════════════════════════════════════╣"
+        f"{RESET}"
+    )
+
+    for nome, host, porta in destinos:
+
+        try:
+
+            with socket.create_connection(
+                (host, porta),
+                timeout=3
+            ):
+
+                print(
+                    f"{GREEN}[+] {nome:<15} ONLINE{RESET}"
+                )
+
+        except OSError:
+
+            print(
+                f"{RED}[-] {nome:<15} OFFLINE{RESET}"
+            )
+
+    print(
+        f"{BLUE}{BOLD}"
+        "╚══════════════════════════════════════╝"
+        f"{RESET}"
+    )
+
+
+# ==========================================
+# TIMESTAMP
+# ==========================================
+
+def timestamp():
+
+    limpar_tela()
+
+    agora = datetime.now()
+
+    unix = int(
+        agora.timestamp()
+    )
+
+    print(
+        f"{GREEN}{BOLD}"
+        f"Timestamp atual: {unix}"
+        f"{RESET}"
+    )
 
 
 # ==========================================
@@ -650,50 +903,38 @@ def menu_utilidades():
             "╔══════════════════════════════════════╗"
             f"{RESET}"
         )
-
         print(
             f"{BLUE}{BOLD}"
             "║             UTILIDADES              ║"
             f"{RESET}"
         )
-
         print(
             f"{BLUE}{BOLD}"
             "╠══════════════════════════════════════╣"
             f"{RESET}"
         )
 
-        print(
-            f"{WHITE}║ [1] Informações do sistema           ║{RESET}"
-        )
+        opcoes = [
+            "[1] Informações do sistema",
+            "[2] Uso de armazenamento",
+            "[3] Data e hora",
+            "[4] Calculadora",
+            "[5] Gerador de senha",
+            "[6] Gerar UUID",
+            "[7] Conversor de unidades",
+            "[8] Testar ping",
+            "[9] Resolver DNS",
+            "[10] Verificar porta",
+            "[11] Verificar arquivo/diretório",
+            "[12] Testar conectividade",
+            "[13] Timestamp Unix"
+        ]
 
-        print(
-            f"{WHITE}║ [2] Uso de armazenamento             ║{RESET}"
-        )
+        for opcao in opcoes:
 
-        print(
-            f"{WHITE}║ [3] Data e hora                      ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [4] Testar ping                      ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [5] Resolver DNS                     ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [6] Verificar porta                  ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [7] Calculadora                      ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [8] Verificar arquivo/diretório      ║{RESET}"
-        )
+            print(
+                f"{WHITE}║ {opcao:<36} ║{RESET}"
+            )
 
         print(
             f"{RED}║ [0] Voltar                           ║{RESET}"
@@ -712,49 +953,49 @@ def menu_utilidades():
         ).strip()
 
         if opcao == "1":
-
             informacoes_sistema()
 
         elif opcao == "2":
-
             uso_armazenamento()
 
         elif opcao == "3":
-
             data_hora()
 
         elif opcao == "4":
-
-            testar_ping()
-
-        elif opcao == "5":
-
-            resolver_dns()
-
-        elif opcao == "6":
-
-            verificar_porta()
-
-        elif opcao == "7":
-
             calculadora()
 
-        elif opcao == "8":
+        elif opcao == "5":
+            gerar_senha()
 
+        elif opcao == "6":
+            gerar_uuid()
+
+        elif opcao == "7":
+            conversor_unidades()
+
+        elif opcao == "8":
+            testar_ping()
+
+        elif opcao == "9":
+            resolver_dns()
+
+        elif opcao == "10":
+            verificar_porta()
+
+        elif opcao == "11":
             verificar_caminho()
 
-        elif opcao == "0":
+        elif opcao == "12":
+            verificar_conectividade()
 
+        elif opcao == "13":
+            timestamp()
+
+        elif opcao == "0":
             break
 
         else:
-
             erro("Opção inválida.")
 
         if opcao != "0":
-
-            input(
-                f"\n{GRAY}"
-                "Pressione ENTER para continuar..."
-                f"{RESET}"
-            )
+            pausar()
