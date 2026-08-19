@@ -11,6 +11,7 @@ import urllib.error
 import subprocess
 import time
 
+
 from modules.generators import menu_geradores
 from modules.consultas import menu_consultas
 from modules.osint import menu_osint
@@ -32,10 +33,20 @@ GRAY = "\033[90m"
 
 
 # ==========================================
+# DIRETÓRIO DO PROJETO
+# ==========================================
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+
+# ==========================================
 # LIMPAR TELA
 # ==========================================
 
 def limpar_tela():
+
     os.system("clear")
 
 
@@ -44,19 +55,92 @@ def limpar_tela():
 # ==========================================
 
 def sucesso(texto):
-    print(f"{GREEN}[+] {texto}{RESET}")
+
+    print(
+        f"{GREEN}[+] {texto}{RESET}"
+    )
 
 
 def erro(texto):
-    print(f"{RED}[-] {texto}{RESET}")
+
+    print(
+        f"{RED}[-] {texto}{RESET}"
+    )
 
 
 def aviso(texto):
-    print(f"{RED}[!] {texto}{RESET}")
+
+    print(
+        f"{YELLOW}[!] {texto}{RESET}"
+    )
 
 
 def info(texto):
-    print(f"{BLUE}[i] {texto}{RESET}")
+
+    print(
+        f"{BLUE}[i] {texto}{RESET}"
+    )
+
+
+# ==========================================
+# CAIXA PADRÃO
+# ==========================================
+
+LARGURA = 38
+
+
+def caixa(titulo, linhas=None, cor=BLUE):
+
+    if linhas is None:
+        linhas = []
+
+    print(
+        f"{cor}{BOLD}"
+        "╔══════════════════════════════════════╗"
+        f"{RESET}"
+    )
+
+    titulo_formatado = titulo.center(
+        LARGURA - 2
+    )
+
+    print(
+        f"{cor}{BOLD}"
+        f"║{titulo_formatado}║"
+        f"{RESET}"
+    )
+
+    print(
+        f"{cor}{BOLD}"
+        "╠══════════════════════════════════════╣"
+        f"{RESET}"
+    )
+
+    for texto, cor_linha in linhas:
+
+        texto = str(texto)
+
+        if len(texto) > LARGURA - 2:
+
+            texto = texto[
+                :LARGURA - 5
+            ] + "..."
+
+        linha = (
+            "║ "
+            + texto.ljust(LARGURA - 3)
+            + " ║"
+        )
+
+        print(
+            f"{cor_linha}{linha}{RESET}"
+        )
+
+    print(
+        f"{cor}{BOLD}"
+        "╚══════════════════════════════════════╝"
+        f"{RESET}"
+    )
 
 
 # ==========================================
@@ -91,29 +175,15 @@ def banner():
 
 def testar_conexao():
 
-    print(
-        f"\n{BLUE}{BOLD}"
-        "╔══════════════════════════════════════╗"
-        f"{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "║          TESTE DE CONEXÃO            ║"
-        f"{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╠══════════════════════════════════════╣"
-        f"{RESET}"
-    )
-
     servidores = [
         ("Google", "google.com", 443),
         ("Cloudflare", "cloudflare.com", 443),
         ("GitHub", "github.com", 443)
     ]
+
+    limpar_tela()
+
+    linhas = []
 
     online = False
 
@@ -121,13 +191,18 @@ def testar_conexao():
 
         try:
 
-            socket.create_connection(
+            conexao = socket.create_connection(
                 (host, porta),
                 timeout=3
             )
 
-            print(
-                f"{GREEN}[+] {nome:<15} ONLINE{RESET}"
+            conexao.close()
+
+            linhas.append(
+                (
+                    f"[+] {nome:<15} ONLINE",
+                    GREEN
+                )
             )
 
             online = True
@@ -138,21 +213,28 @@ def testar_conexao():
             OSError
         ):
 
-            print(
-                f"{RED}[-] {nome:<15} OFFLINE{RESET}"
+            linhas.append(
+                (
+                    f"[-] {nome:<15} OFFLINE",
+                    RED
+                )
             )
 
-    print(
-        f"{BLUE}{BOLD}"
-        "╚══════════════════════════════════════╝"
-        f"{RESET}"
+    caixa(
+        "TESTE DE CONEXÃO",
+        linhas
     )
 
+    print()
+
     if online:
+
         sucesso(
             "Conexão com a internet disponível."
         )
+
     else:
+
         erro(
             "Não foi possível alcançar os servidores."
         )
@@ -164,22 +246,10 @@ def testar_conexao():
 
 def meu_ip_publico():
 
-    print(
-        f"\n{BLUE}{BOLD}"
-        "╔══════════════════════════════════════╗"
-        f"{RESET}"
-    )
+    limpar_tela()
 
-    print(
-        f"{BLUE}{BOLD}"
-        "║           MEU IP PÚBLICO             ║"
-        f"{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╚══════════════════════════════════════╝"
-        f"{RESET}"
+    caixa(
+        "MEU IP PÚBLICO"
     )
 
     servicos = [
@@ -213,10 +283,10 @@ def meu_ip_publico():
 
             if ip:
 
-                print(
-                    f"\n{GREEN}{BOLD}"
+                print()
+
+                sucesso(
                     f"IP público: {ip}"
-                    f"{RESET}"
                 )
 
                 return
@@ -243,72 +313,221 @@ def atualizar_painel():
 
     limpar_tela()
 
-    print(
-        f"{BLUE}{BOLD}"
-        "╔══════════════════════════════════════╗"
-        f"{RESET}"
+    caixa(
+        "ATUALIZAR PAINEL",
+        [
+            (
+                "CONKS CYBER UPDATE SYSTEM",
+                WHITE
+            ),
+            (
+                "Verificando GitHub...",
+                BLUE
+            )
+        ]
     )
+
+    print()
 
     print(
         f"{BLUE}{BOLD}"
-        "║          ATUALIZAR PAINEL           ║"
+        "[~] Preparando atualização..."
         f"{RESET}"
     )
 
-    print(
-        f"{BLUE}{BOLD}"
-        "╠══════════════════════════════════════╣"
-        f"{RESET}"
+    time.sleep(0.5)
+
+    # --------------------------------------
+    # Verificar se é um repositório Git
+    # --------------------------------------
+
+    git_dir = os.path.join(
+        BASE_DIR,
+        ".git"
     )
 
-    print(
-        f"{WHITE}║                                      ║{RESET}"
-    )
+    if not os.path.isdir(git_dir):
+
+        erro(
+            "Este diretório não é um repositório Git."
+        )
+
+        aviso(
+            "Verifique se o painel foi baixado corretamente."
+        )
+
+        input(
+            f"\n{GRAY}"
+            "Pressione ENTER para voltar..."
+            f"{RESET}"
+        )
+
+        return
 
     print(
-        f"{WHITE}║      CONKS CYBER UPDATE SYSTEM       ║{RESET}"
+        f"{BLUE}[~] Buscando atualizações...{RESET}"
     )
-
-    print(
-        f"{WHITE}║                                      ║{RESET}"
-    )
-
-    print(
-        f"{BLUE}{BOLD}"
-        "╚══════════════════════════════════════╝"
-        f"{RESET}"
-    )
-
-    print(
-        f"\n{BLUE}[~] Verificando atualizações...{RESET}"
-    )
-
-    time.sleep(0.7)
 
     try:
 
-        resultado = subprocess.run(
+        # ----------------------------------
+        # git fetch
+        # ----------------------------------
+
+        fetch = subprocess.run(
             [
                 "git",
-                "pull",
-                "origin",
-                "main"
+                "fetch",
+                "origin"
             ],
+            cwd=BASE_DIR,
             capture_output=True,
             text=True,
             timeout=60
         )
 
-        saida = (
-            resultado.stdout +
-            resultado.stderr
+        if fetch.returncode != 0:
+
+            erro(
+                "Não foi possível verificar o GitHub."
+            )
+
+            if fetch.stderr.strip():
+
+                print(
+                    f"\n{GRAY}"
+                    f"{fetch.stderr.strip()}"
+                    f"{RESET}"
+                )
+
+            input(
+                f"\n{GRAY}"
+                "Pressione ENTER para voltar..."
+                f"{RESET}"
+            )
+
+            return
+
+        print(
+            f"{GREEN}[+] GitHub conectado.{RESET}"
+        )
+
+        time.sleep(0.4)
+
+        # ----------------------------------
+        # Verificar diferenças
+        # ----------------------------------
+
+        comparacao = subprocess.run(
+            [
+                "git",
+                "rev-list",
+                "--count",
+                "HEAD..origin/main"
+            ],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if comparacao.returncode != 0:
+
+            erro(
+                "Não foi possível verificar a versão."
+            )
+
+            input(
+                f"\n{GRAY}"
+                "Pressione ENTER para voltar..."
+                f"{RESET}"
+            )
+
+            return
+
+        try:
+
+            quantidade = int(
+                comparacao.stdout.strip()
+                or "0"
+            )
+
+        except ValueError:
+
+            quantidade = 0
+
+        # ----------------------------------
+        # Já está atualizado
+        # ----------------------------------
+
+        if quantidade == 0:
+
+            print()
+
+            caixa(
+                "PAINEL ATUALIZADO",
+                [
+                    (
+                        "O painel está na versão mais recente.",
+                        YELLOW
+                    )
+                ],
+                YELLOW
+            )
+
+            input(
+                f"\n{GRAY}"
+                "Pressione ENTER para voltar..."
+                f"{RESET}"
+            )
+
+            return
+
+        # ----------------------------------
+        # Existem atualizações
+        # ----------------------------------
+
+        print()
+
+        print(
+            f"{YELLOW}{BOLD}"
+            f"[!] {quantidade} atualização(ões) encontrada(s)."
+            f"{RESET}"
+        )
+
+        print(
+            f"{BLUE}[~] Baixando atualizações...{RESET}"
+        )
+
+        time.sleep(0.5)
+
+        # ----------------------------------
+        # Git pull
+        # ----------------------------------
+
+        resultado = subprocess.run(
+            [
+                "git",
+                "pull",
+                "--ff-only",
+                "origin",
+                "main"
+            ],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=60
         )
 
         if resultado.returncode != 0:
 
-            print(
-                f"\n{RED}[-] Não foi possível "
-                f"atualizar o painel.{RESET}"
+            erro(
+                "Não foi possível aplicar a atualização."
+            )
+
+            saida = (
+                resultado.stdout +
+                resultado.stderr
             )
 
             if saida.strip():
@@ -319,112 +538,69 @@ def atualizar_painel():
                     f"{RESET}"
                 )
 
-        elif (
-            "Already up to date" in saida
-            or "Already up-to-date" in saida
-        ):
-
-            print(
-                f"\n{YELLOW}{BOLD}"
-                "╔══════════════════════════════════════╗"
+            input(
+                f"\n{GRAY}"
+                "Pressione ENTER para voltar..."
                 f"{RESET}"
             )
 
-            print(
-                f"{YELLOW}{BOLD}"
-                "║                                      ║"
-                f"{RESET}"
-            )
+            return
 
-            print(
-                f"{YELLOW}{BOLD}"
-                "║  O PAINEL ESTÁ NA VERSÃO MAIS       ║"
-                f"{RESET}"
-            )
+        print(
+            f"{GREEN}[+] Arquivos atualizados.{RESET}"
+        )
 
-            print(
-                f"{YELLOW}{BOLD}"
-                "║  RECENTE                              ║"
-                f"{RESET}"
-            )
+        print(
+            f"{GREEN}[+] Atualização concluída!{RESET}"
+        )
 
-            print(
-                f"{YELLOW}{BOLD}"
-                "║                                      ║"
-                f"{RESET}"
-            )
+        print()
 
-            print(
-                f"{YELLOW}{BOLD}"
-                "╚══════════════════════════════════════╝"
-                f"{RESET}"
-            )
+        caixa(
+            "ATUALIZAÇÃO CONCLUÍDA",
+            [
+                (
+                    "O CONKS Cyber foi atualizado.",
+                    GREEN
+                ),
+                (
+                    "Reinicie o painel para carregar tudo.",
+                    WHITE
+                )
+            ],
+            GREEN
+        )
 
-        else:
-
-            print(
-                f"\n{GREEN}{BOLD}"
-                "╔══════════════════════════════════════╗"
-                f"{RESET}"
-            )
-
-            print(
-                f"{GREEN}{BOLD}"
-                "║       ATUALIZAÇÃO CONCLUÍDA!        ║"
-                f"{RESET}"
-            )
-
-            print(
-                f"{GREEN}{BOLD}"
-                "╠══════════════════════════════════════╣"
-                f"{RESET}"
-            )
-
-            print(
-                f"{GREEN}"
-                "║ O painel foi atualizado com sucesso. ║"
-                f"{RESET}"
-            )
-
-            print(
-                f"{GREEN}{BOLD}"
-                "╚══════════════════════════════════════╝"
-                f"{RESET}"
-            )
+        if resultado.stdout.strip():
 
             print(
                 f"\n{GRAY}"
-                "Alterações recebidas do GitHub:"
+                f"{resultado.stdout.strip()}"
                 f"{RESET}"
             )
 
-            if saida.strip():
-
-                print(
-                    f"{GRAY}"
-                    f"{saida.strip()}"
-                    f"{RESET}"
-                )
-
     except subprocess.TimeoutExpired:
 
-        print(
-            f"\n{RED}[-] A atualização demorou "
-            f"demais e foi cancelada.{RESET}"
+        erro(
+            "A atualização demorou demais."
         )
 
     except FileNotFoundError:
 
+        erro(
+            "Git não está instalado neste dispositivo."
+        )
+
         print(
-            f"\n{RED}[-] Git não está instalado "
-            f"neste dispositivo.{RESET}"
+            f"{GRAY}"
+            "No Termux, instale com: pkg install git"
+            f"{RESET}"
         )
 
     except Exception as erro_inesperado:
 
-        print(
-            f"\n{RED}[-] Erro ao atualizar: "
-            f"{erro_inesperado}{RESET}"
+        erro(
+            f"Erro ao atualizar: {erro_inesperado}"
         )
 
     input(
@@ -442,40 +618,24 @@ def menu_rede():
 
     while True:
 
-        print(
-            f"\n{BLUE}{BOLD}"
-            "╔══════════════════════════════════════╗"
-            f"{RESET}"
-        )
+        limpar_tela()
 
-        print(
-            f"{BLUE}{BOLD}"
-            "║                 REDE                 ║"
-            f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╠══════════════════════════════════════╣"
-            f"{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [1] Meu IP público                   ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [2] Testar conexão                   ║{RESET}"
-        )
-
-        print(
-            f"{RED}║ [0] Voltar                           ║{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╚══════════════════════════════════════╝"
-            f"{RESET}"
+        caixa(
+            "REDE",
+            [
+                (
+                    "[1] Meu IP público",
+                    WHITE
+                ),
+                (
+                    "[2] Testar conexão",
+                    WHITE
+                ),
+                (
+                    "[0] Voltar",
+                    RED
+                )
+            ]
         )
 
         opcao = input(
@@ -498,7 +658,9 @@ def menu_rede():
 
         else:
 
-            erro("Opção inválida.")
+            erro(
+                "Opção inválida."
+            )
 
         if opcao != "0":
 
@@ -521,68 +683,46 @@ def menu_principal():
 
         banner()
 
-        print(
-            f"{BLUE}{BOLD}"
-            "╔══════════════════════════════════════╗"
-            f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "║             MENU PRINCIPAL           ║"
-            f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╠══════════════════════════════════════╣"
-            f"{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [1] Geradores                        ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [2] Consultas                        ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [3] OSINT                            ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [4] Rede                             ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [5] Validadores                      ║{RESET}"
-        )
-
-        print(
-            f"{WHITE}║ [6] Utilidades                       ║{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "║ [7] Atualizar painel                ║"
-            f"{RESET}"
-        )
-
-        print(
-            f"{WHITE}║                                      ║{RESET}"
-        )
-
-        print(
-            f"{RED}{BOLD}"
-            "║ [0] Sair                             ║"
-            f"{RESET}"
-        )
-
-        print(
-            f"{BLUE}{BOLD}"
-            "╚══════════════════════════════════════╝"
-            f"{RESET}"
+        caixa(
+            "MENU PRINCIPAL",
+            [
+                (
+                    "[1] Geradores",
+                    WHITE
+                ),
+                (
+                    "[2] Consultas",
+                    WHITE
+                ),
+                (
+                    "[3] OSINT",
+                    WHITE
+                ),
+                (
+                    "[4] Rede",
+                    WHITE
+                ),
+                (
+                    "[5] Validadores",
+                    WHITE
+                ),
+                (
+                    "[6] Utilidades",
+                    WHITE
+                ),
+                (
+                    "[7] Atualizar painel",
+                    WHITE
+                ),
+                (
+                    "",
+                    WHITE
+                ),
+                (
+                    "[0] Sair",
+                    RED
+                )
+            ]
         )
 
         opcao = input(
@@ -684,7 +824,7 @@ def menu_principal():
                 )
 
         # ==================================
-        # ATUALIZAR PAINEL
+        # ATUALIZAR
         # ==================================
 
         elif opcao == "7":
@@ -699,23 +839,18 @@ def menu_principal():
 
             limpar_tela()
 
-            print(
-                f"\n{RED}{BOLD}"
-                "╔══════════════════════════════════════╗"
-                f"{RESET}"
+            caixa(
+                "CONKS CYBER",
+                [
+                    (
+                        "CONKS Cyber encerrado.",
+                        RED
+                    )
+                ],
+                RED
             )
 
-            print(
-                f"{RED}{BOLD}"
-                "║        CONKS CYBER ENCERRADO        ║"
-                f"{RESET}"
-            )
-
-            print(
-                f"{RED}{BOLD}"
-                "╚══════════════════════════════════════╝"
-                f"{RESET}\n"
-            )
+            print()
 
             sys.exit(0)
 
@@ -725,7 +860,9 @@ def menu_principal():
 
         else:
 
-            erro("Opção inválida.")
+            erro(
+                "Opção inválida."
+            )
 
             input(
                 f"\n{GRAY}"
@@ -767,5 +904,10 @@ def main():
         )
 
 
+# ==========================================
+# EXECUÇÃO
+# ==========================================
+
 if __name__ == "__main__":
+
     main()
