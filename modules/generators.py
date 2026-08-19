@@ -224,22 +224,69 @@ def formatar_cpf(cpf):
 
 def gerar_cnpj_teste():
 
-    # 14 dígitos com formato de CNPJ.
-    # Não é calculado como CNPJ válido.
+    # ==========================================
+    # CNPJ FICTÍCIO — DÍGITOS VERIFICADORES
+    # ==========================================
 
-    return numero_ficticio(14)
+    # Gera os 12 primeiros dígitos
+    numeros = [
+        random.randint(0, 9)
+        for _ in range(12)
+    ]
 
+    # ==========================================
+    # 1º DÍGITO VERIFICADOR
+    # Pesos: 5,4,3,2,9,8,7,6,5,4,3,2
+    # ==========================================
 
-def formatar_cnpj(cnpj):
+    pesos = [
+        5, 4, 3, 2,
+        9, 8, 7, 6,
+        5, 4, 3, 2
+    ]
 
-    cnpj = str(cnpj).zfill(14)
+    soma = sum(
+        numeros[i] * pesos[i]
+        for i in range(12)
+    )
 
-    return (
-        f"{cnpj[:2]}."
-        f"{cnpj[2:5]}."
-        f"{cnpj[5:8]}/"
-        f"{cnpj[8:12]}-"
-        f"{cnpj[12:]}"
+    resto = soma % 11
+
+    if resto < 2:
+        primeiro_digito = 0
+    else:
+        primeiro_digito = 11 - resto
+
+    numeros.append(primeiro_digito)
+
+    # ==========================================
+    # 2º DÍGITO VERIFICADOR
+    # Pesos: 6,5,4,3,2,9,8,7,6,5,4,3,2
+    # ==========================================
+
+    pesos = [
+        6, 5, 4, 3, 2,
+        9, 8, 7, 6, 5, 4, 3, 2
+    ]
+
+    soma = sum(
+        numeros[i] * pesos[i]
+        for i in range(13)
+    )
+
+    resto = soma % 11
+
+    if resto < 2:
+        segundo_digito = 0
+    else:
+        segundo_digito = 11 - resto
+
+    numeros.append(segundo_digito)
+
+    # Retorna os 14 dígitos
+    return "".join(
+        str(numero)
+        for numero in numeros
     )
 
 
