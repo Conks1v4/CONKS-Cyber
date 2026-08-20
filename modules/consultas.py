@@ -237,7 +237,6 @@ def fonte_havell(cpf_limpo):
 # FONTE 6: LeakCheck (dados vazados)
 def fonte_leakcheck(cpf_limpo):
     try:
-        # API pública do LeakCheck (pode precisar de chave)
         url = f"https://leakcheck.io/api/v1/check?key=YOUR_KEY&check={cpf_limpo}"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
@@ -259,7 +258,6 @@ def fonte_leakcheck(cpf_limpo):
 # FONTE 7: DeHashed (dados vazados)
 def fonte_dehashed(cpf_limpo):
     try:
-        # DeHashed API (requer autenticação)
         url = f"https://api.dehashed.com/search?query=cpf:{cpf_limpo}"
         headers = {
             "Authorization": "Basic " + base64.b64encode(b"email:api_key").decode(),
@@ -285,21 +283,19 @@ def fonte_dehashed(cpf_limpo):
 # FONTE 8: Have I Been Pwned
 def fonte_hibp(cpf_limpo):
     try:
-        # Verifica se o CPF está em vazamentos conhecidos
-        # Nota: HIBP geralmente usa email, mas podemos tentar
         email = f"{cpf_limpo}@gmail.com"
         hash_sufix = hashlib.sha1(email.encode()).hexdigest().upper()
         url = f"https://api.pwnedpasswords.com/range/{hash_sufix[:5]}"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
-            # Se encontrou hash, pode estar vazado
             hashes = response.text.split('\n')
             for h in hashes:
                 if h.startswith(hash_sufix[5:]):
                     return {
                         "status": "VAZADO",
                         "fonte": "HIBP",
-                        "observacao": "CPF/Email encontrado em vazamento"
+                        "observacao": "CPF/Email encontrado em vazamento",
+                        "email": email
                     }
     except:
         pass
@@ -309,25 +305,31 @@ def fonte_hibp(cpf_limpo):
 # FONTE 9: Scraping de sites públicos
 def fonte_scraping_publico(cpf_limpo):
     try:
-        # Tenta buscar em sites públicos (exemplo)
         urls = [
             f"https://www.google.com/search?q={cpf_limpo}+cpf",
             f"https://www.bing.com/search?q={cpf_limpo}+cpf",
         ]
         
+        resultados = []
         for url in urls:
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
-                # Procura por padrões de nome, email, telefone
                 html = response.text
                 nomes = re.findall(r'[A-Z][a-záéíóúãõç]+ [A-Z][a-záéíóúãõç]+', html)
-                if nomes:
-                    return {
-                        "possiveis_nomes": nomes[:3],
-                        "fonte": "ScrapingGoogle",
-                        "url": url
+                emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html)
+                telefones = re.findall(r'\(?\d{2}\)?\s?\d{4,5}-?\d{4}', html)
+                
+                if nomes or emails or telefones:
+                    resultado = {
+                        "fonte": "Scraping",
+                        "url": url,
+                        "possiveis_nomes": nomes[:5] if nomes else [],
+                        "possiveis_emails": emails[:5] if emails else [],
+                        "possiveis_telefones": telefones[:5] if telefones else []
                     }
+                    resultados.append(resultado)
+        return resultados if resultados else None
     except:
         pass
     return None
@@ -336,7 +338,6 @@ def fonte_scraping_publico(cpf_limpo):
 # FONTE 10: API SERPRO (pagamento)
 def fonte_serpro(cpf_limpo):
     try:
-        # SERPRO - requer token de autenticação
         url = f"https://api.serpro.gov.br/cpf/v1/{cpf_limpo}"
         headers = {
             "Authorization": "Bearer SEU_TOKEN_SERPRO",
@@ -357,22 +358,9 @@ def fonte_serpro(cpf_limpo):
     return None
 
 
-# FONTE 11: API do Correios (CEP)
-def fonte_correios(cpf_limpo):
-    try:
-        # Correios pode ter dados indiretos
-        url = "https://buscacepinter.correios.com.br/app/endereco/index.php"
-        # Isso é só ilustrativo
-        return None
-    except:
-        pass
-    return None
-
-
-# FONTE 12: API do Tribunal Superior Eleitoral
+# FONTE 11: API do TSE
 def fonte_tse(cpf_limpo):
     try:
-        # TSE tem dados públicos de eleitores
         url = f"https://divulgacandcontas.tse.jus.br/divulga/rest/v1/consulta/2022/BR/candidato/{cpf_limpo}"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
@@ -388,10 +376,9 @@ def fonte_tse(cpf_limpo):
     return None
 
 
-# FONTE 13: API CNPJ (pode ter sócios com CPF)
+# FONTE 12: API CNPJ (sócios)
 def fonte_cnpj_socios(cpf_limpo):
     try:
-        # Busca empresas onde o CPF é sócio
         url = f"https://api.cnpja.com.br/companies?cpf={cpf_limpo}"
         headers = {"Authorization": "Bearer SUA_CHAVE_CNPJA"}
         response = requests.get(url, headers=headers, timeout=10)
@@ -399,7 +386,7 @@ def fonte_cnpj_socios(cpf_limpo):
             dados = response.json()
             if dados.get("companies"):
                 empresas = []
-                for empresa in dados["companies"][:3]:
+                for empresa in dados["companies"][:5]:
                     empresas.append({
                         "cnpj": empresa.get("cnpj"),
                         "nome": empresa.get("nome"),
@@ -414,17 +401,7 @@ def fonte_cnpj_socios(cpf_limpo):
     return None
 
 
-# FONTE 14: API de dados bancários (exemplo)
-def fonte_bancaria(cpf_limpo):
-    try:
-        # Isso é ilustrativo - APIs bancárias são restritas
-        return None
-    except:
-        pass
-    return None
-
-
-# FONTE 15: Google Dorking
+# FONTE 13: Google Dorks
 def fonte_google_dorks(cpf_limpo):
     try:
         dorks = [
@@ -435,7 +412,7 @@ def fonte_google_dorks(cpf_limpo):
             f"intitle:{cpf_limpo}"
         ]
         resultados = []
-        for dork in dorks[:2]:  # Limite para não sobrecarregar
+        for dork in dorks[:2]:
             url = f"https://www.google.com/search?q={dork.replace(' ', '+')}"
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             response = requests.get(url, headers=headers, timeout=10)
@@ -449,6 +426,168 @@ def fonte_google_dorks(cpf_limpo):
     except:
         pass
     return None
+
+
+# FONTE 14: Busca em PDFs públicos
+def fonte_pdfs_publicos(cpf_limpo):
+    try:
+        url = f"https://www.google.com/search?q={cpf_limpo}+filetype:pdf"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            # Extrai links de PDF
+            pdf_links = re.findall(r'https?://[^\s]+\.pdf', response.text)
+            if pdf_links:
+                return {
+                    "fonte": "PDFsPublicos",
+                    "quantidade": len(pdf_links),
+                    "links": pdf_links[:5]
+                }
+    except:
+        pass
+    return None
+
+
+# FONTE 15: Busca em redes sociais
+def fonte_redes_sociais(cpf_limpo):
+    try:
+        redes = [
+            ("Facebook", f"https://www.facebook.com/search/top?q={cpf_limpo}"),
+            ("LinkedIn", f"https://www.linkedin.com/search/results/all/?keywords={cpf_limpo}"),
+            ("Instagram", f"https://www.instagram.com/web/search/topsearch/?query={cpf_limpo}")
+        ]
+        
+        resultados = []
+        for nome, url in redes:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                resultados.append({
+                    "rede": nome,
+                    "url": url,
+                    "fonte": "RedesSociais",
+                    "status": "Acessível"
+                })
+        return resultados if resultados else None
+    except:
+        pass
+    return None
+
+
+def exibir_dados_completos(dados, cpf_limpo):
+    """Exibe dados completos formatados"""
+    print(f"\n{'='*50}")
+    print(f"[+] DADOS COMPLETOS ENCONTRADOS!")
+    print(f"Fonte: {dados.get('fonte', 'Desconhecida')}")
+    print("="*50)
+    print("\n╔══════════════════════════════════════════╗")
+    print("║           RESULTADO COMPLETO           ║")
+    print("╠══════════════════════════════════════════╣")
+    
+    campos = [
+        ("CPF", cpf_limpo),
+        ("Nome", dados.get("nome")),
+        ("Data Nascimento", dados.get("data_nascimento")),
+        ("Sexo", dados.get("sexo")),
+        ("Nome da Mãe", dados.get("nome_mae")),
+        ("Nome do Pai", dados.get("nome_pai")),
+        ("Situação", dados.get("situacao")),
+        ("RG", dados.get("rg")),
+        ("Email", dados.get("email")),
+        ("Telefone", dados.get("telefone")),
+        ("Endereço", dados.get("endereco")),
+        ("Cargo", dados.get("cargo")),
+        ("Fonte", dados.get("fonte"))
+    ]
+    
+    for nome, valor in campos:
+        if valor is not None and valor != "" and str(valor) != "None":
+            valor_str = str(valor)
+            if len(valor_str) > 20:
+                valor_str = valor_str[:17] + "..."
+            print(f"║ {nome:<18}: {valor_str:<20} ║")
+    
+    print("╚══════════════════════════════════════════╝")
+
+
+def exibir_dados_parciais(dados_parciais):
+    """Exibe todos os dados parciais encontrados"""
+    print(f"\n[+] ENCONTRADOS {len(dados_parciais)} DADOS PARCIAIS")
+    print("\n╔══════════════════════════════════════════╗")
+    print("║           DADOS PARCIAIS               ║")
+    print("╠══════════════════════════════════════════╣")
+    
+    for i, item in enumerate(dados_parciais, 1):
+        if isinstance(item, dict):
+            fonte = item.get("fonte", "Desconhecida")
+            
+            # Se for scraping com múltiplos dados
+            if "possiveis_nomes" in item:
+                print(f"║ {i}. {fonte:<15}                             ║")
+                if item.get("possiveis_nomes"):
+                    nomes = item["possiveis_nomes"][:3]
+                    print(f"║    Nomes encontrados: {', '.join(nomes):<22} ║")
+                if item.get("possiveis_emails"):
+                    emails = item["possiveis_emails"][:3]
+                    print(f"║    Emails: {', '.join(emails):<28} ║")
+                if item.get("possiveis_telefones"):
+                    tels = item["possiveis_telefones"][:3]
+                    print(f"║    Telefones: {', '.join(tels):<24} ║")
+                if item.get("url"):
+                    print(f"║    URL: {str(item['url'])[:20]:<31} ║")
+            
+            # Se for dados de vazamento
+            elif item.get("status") == "VAZADO":
+                print(f"║ {i}. {fonte:<15}: STATUS VAZADO         ║")
+                print(f"║    {item.get('observacao', ''):<35} ║")
+                if item.get("email"):
+                    print(f"║    Email: {item['email']:<26} ║")
+            
+            # Se for empresas (CNPJ)
+            elif "empresas" in item:
+                print(f"║ {i}. {fonte:<15}: {len(item['empresas'])} empresas     ║")
+                for empresa in item["empresas"][:3]:
+                    nome_emp = empresa.get("nome", "")[:20]
+                    print(f"║    - {nome_emp:<28} ║")
+            
+            # Se for resultado de redes sociais
+            elif "rede" in item:
+                print(f"║ {i}. {item['rede']:<15}: {item.get('status', 'Encontrado')} ║")
+                print(f"║    URL: {str(item.get('url', ''))[:20]:<31} ║")
+            
+            # Dados de PDFs
+            elif "quantidade" in item:
+                print(f"║ {i}. {fonte:<15}: {item['quantidade']} PDFs encontrados ║")
+                if item.get("links"):
+                    print(f"║    Links: {str(item['links'][0])[:20]:<31} ║")
+            
+            # Dados de Google Dorks
+            elif "dork" in item:
+                print(f"║ {i}. {fonte:<15}: {item['dork'][:20]} ║")
+                print(f"║    URL: {str(item.get('url', ''))[:20]:<31} ║")
+            
+            # Dados genéricos
+            else:
+                # Mostra todos os campos do dicionário
+                campos_mostrados = 0
+                print(f"║ {i}. {fonte:<15}                             ║")
+                for chave, valor in item.items():
+                    if chave != "fonte" and valor and str(valor) != "None":
+                        valor_str = str(valor)
+                        if len(valor_str) > 20:
+                            valor_str = valor_str[:17] + "..."
+                        if campos_mostrados < 5:  # Limita a 5 campos para não poluir
+                            print(f"║    {chave}: {valor_str:<24} ║")
+                            campos_mostrados += 1
+                if campos_mostrados == 0:
+                    print(f"║    {str(item)[:30]:<35} ║")
+        else:
+            # Se for uma lista de strings ou outro tipo
+            print(f"║ {i}. {str(item)[:35]:<35} ║")
+        
+        print("║                                          ║")
+    
+    print("╚══════════════════════════════════════════╝")
 
 
 def consulta_cpf():
@@ -479,7 +618,7 @@ def consulta_cpf():
     print("\n[+] CPF válido.")
     print("[+] Data de nascimento válida.")
     print("\n[~] Buscando em TODAS as fontes disponíveis...")
-    print("[~] Isso pode levar alguns segundos...")
+    print("[~] Isso pode levar alguns segundos...\n")
 
     cpf_limpo = limpar_cpf(cpf)
     dados_completos = None
@@ -500,94 +639,58 @@ def consulta_cpf():
         ("Scraping", lambda: fonte_scraping_publico(cpf_limpo)),
         ("TSE", lambda: fonte_tse(cpf_limpo)),
         ("CNPJA", lambda: fonte_cnpj_socios(cpf_limpo)),
-        ("GoogleDorks", lambda: fonte_google_dorks(cpf_limpo))
+        ("GoogleDorks", lambda: fonte_google_dorks(cpf_limpo)),
+        ("PDFsPublicos", lambda: fonte_pdfs_publicos(cpf_limpo)),
+        ("RedesSociais", lambda: fonte_redes_sociais(cpf_limpo))
     ]
     
-    print("\n[~] Testando fontes:")
+    print("[~] Testando fontes:")
     
     for nome_fonte, funcao in fontes:
         print(f"[~] {nome_fonte}...", end="")
         try:
             resultado = funcao()
             fontes_tentadas.append(nome_fonte)
+            
             if resultado:
-                # Se achou dados completos com nome
-                if isinstance(resultado, dict) and resultado.get("nome"):
-                    if not dados_completos or len(resultado.keys()) > len(dados_completos.keys()):
-                        dados_completos = resultado
+                # Se for lista de resultados
+                if isinstance(resultado, list):
+                    for item in resultado:
+                        dados_parciais.append(item)
+                    fontes_com_resultado.append(nome_fonte)
+                    print(" ✓ ENCONTRADO")
+                # Se for dicionário com dados
+                elif isinstance(resultado, dict):
+                    # Verifica se tem nome (dados completos)
+                    if resultado.get("nome") and len(str(resultado.get("nome"))) > 3:
+                        # Se já tem dados completos, compara qual tem mais campos
+                        if not dados_completos or len(resultado.keys()) > len(dados_completos.keys()):
+                            dados_completos = resultado
                         fontes_com_resultado.append(nome_fonte)
                         print(" ✓ DADOS COMPLETOS")
-                # Se achou dados parciais
-                elif isinstance(resultado, dict) and resultado:
-                    dados_parciais.append(resultado)
-                    fontes_com_resultado.append(nome_fonte)
-                    print(" ✓ DADOS PARCIAIS")
-                # Se achou listas de resultados
-                elif isinstance(resultado, list) and resultado:
-                    dados_parciais.extend(resultado)
-                    fontes_com_resultado.append(nome_fonte)
-                    print(" ✓ MÚLTIPLOS RESULTADOS")
+                    else:
+                        # Dados parciais
+                        dados_parciais.append(resultado)
+                        fontes_com_resultado.append(nome_fonte)
+                        print(" ✓ DADOS PARCIAIS")
                 else:
                     print(" ✗ Sem dados")
             else:
                 print(" ✗ Sem dados")
         except Exception as e:
-            print(f" ✗ Erro: {str(e)[:30]}")
+            print(f" ✗ Erro")
         
-        time.sleep(0.5)  # Pequena pausa entre requisições
+        time.sleep(0.3)
     
-    # Exibe resultados
+    # EXIBE TODOS OS RESULTADOS
     if dados_completos:
-        print(f"\n{'='*50}")
-        print(f"[+] DADOS COMPLETOS ENCONTRADOS!")
-        print(f"Fonte: {dados_completos.get('fonte', 'Desconhecida')}")
-        print("="*50)
-        print("\n╔══════════════════════════════════════════╗")
-        print("║           RESULTADO COMPLETO           ║")
-        print("╠══════════════════════════════════════════╣")
-        
-        campos = [
-            ("CPF", cpf_limpo),
-            ("Nome", dados_completos.get("nome")),
-            ("Data Nascimento", dados_completos.get("data_nascimento")),
-            ("Sexo", dados_completos.get("sexo")),
-            ("Nome da Mãe", dados_completos.get("nome_mae")),
-            ("Nome do Pai", dados_completos.get("nome_pai")),
-            ("Situação", dados_completos.get("situacao")),
-            ("RG", dados_completos.get("rg")),
-            ("Email", dados_completos.get("email")),
-            ("Telefone", dados_completos.get("telefone")),
-            ("Endereço", dados_completos.get("endereco")),
-            ("Fonte", dados_completos.get("fonte"))
-        ]
-        
-        for nome, valor in campos:
-            if valor is not None and valor != "" and str(valor) != "None":
-                valor_str = str(valor)
-                if len(valor_str) > 20:
-                    valor_str = valor_str[:17] + "..."
-                print(f"║ {nome:<18}: {valor_str:<20} ║")
-        
-        print("╚══════════════════════════════════════════╝")
-        
-    elif dados_parciais:
-        print(f"\n[+] ENCONTRADOS {len(dados_parciais)} DADOS PARCIAIS")
-        print("\n╔══════════════════════════════════════════╗")
-        print("║           DADOS PARCIAIS               ║")
-        print("╠══════════════════════════════════════════╣")
-        
-        for i, dados in enumerate(dados_parciais[:5], 1):
-            fonte = dados.get("fonte", "Desconhecida")
-            descricao = dados.get("status") or dados.get("observacao") or "Info"
-            if dados.get("possiveis_nomes"):
-                descricao = f"Nomes: {', '.join(dados['possiveis_nomes'][:2])}"
-            print(f"║ {i}. {fonte:<15}: {descricao[:20]:<20} ║")
-        
-        if len(dados_parciais) > 5:
-            print(f"║ ... e mais {len(dados_parciais)-5} resultados ║")
-        print("╚══════════════════════════════════════════╝")
-        
-    else:
+        exibir_dados_completos(dados_completos, cpf_limpo)
+    
+    if dados_parciais:
+        exibir_dados_parciais(dados_parciais)
+    
+    # Se não encontrou nada
+    if not dados_completos and not dados_parciais:
         print("\n[!] NENHUM DADO ENCONTRADO EM NENHUMA FONTE!")
         print(f"[i] Fontes consultadas: {len(fontes_tentadas)}")
         
@@ -609,12 +712,21 @@ def consulta_cpf():
         print("    1. Tente novamente em alguns minutos")
         print("    2. Use um serviço pago para mais dados")
         print("    3. Verifique sua conexão com a internet")
-    
-    print(f"\n[~] Total de fontes consultadas: {len(fontes_tentadas)}")
-    if fontes_com_resultado:
-        print(f"[~] Fontes com resultados: {', '.join(fontes_com_resultado)}")
     else:
-        print("[~] Nenhuma fonte retornou dados")
+        print("\n[~] RESUMO DA BUSCA:")
+        print(f"    Total de fontes consultadas: {len(fontes_tentadas)}")
+        print(f"    Fontes com resultados: {len(fontes_com_resultado)}")
+        if fontes_com_resultado:
+            print(f"    Fontes: {', '.join(fontes_com_resultado[:5])}")
+            if len(fontes_com_resultado) > 5:
+                print(f"    ... e mais {len(fontes_com_resultado)-5} fontes")
+    
+    # Mostra sugestões de busca manual
+    print("\n[i] Links úteis para busca manual:")
+    print("    - https://www.google.com/search?q=" + cpf_limpo)
+    print("    - https://www.bing.com/search?q=" + cpf_limpo)
+    print("    - https://www.receitaws.com.br/")
+    print("    - https://www.4devs.com.br/validar_cpf")
 
 
 # ==========================================
