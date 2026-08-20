@@ -111,6 +111,83 @@ def mascarar_cpf(cpf):
     return "*" * 9 + cpf[-2:]
 
 
+def consultar_api_brasilapi(cpf_limpo):
+    """Consulta CPF via BrasilAPI"""
+    try:
+        url = f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
+        headers = {"User-Agent": "CONKS-Cyber/1.0"}
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "nome": dados.get("nome"),
+                "data_nascimento": dados.get("data_nascimento"),
+                "sexo": dados.get("sexo"),
+                "nome_mae": dados.get("nome_mae"),
+                "nome_pai": dados.get("nome_pai"),
+                "situacao": dados.get("situacao"),
+                "data_obito": dados.get("data_obito"),
+                "obito": dados.get("obito")
+            }
+    except:
+        pass
+    return None
+
+
+def consultar_api_receitaws(cpf_limpo):
+    """Consulta CPF via ReceitaWS"""
+    try:
+        url = f"https://api.receitaws.com.br/v1/cpf/{cpf_limpo}"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            if not dados.get("erro"):
+                return {
+                    "nome": dados.get("nome"),
+                    "data_nascimento": dados.get("data_nascimento"),
+                    "sexo": dados.get("sexo"),
+                    "nome_mae": dados.get("mae"),
+                    "nome_pai": dados.get("pai"),
+                    "situacao": dados.get("situacao"),
+                    "data_obito": dados.get("data_obito")
+                }
+    except:
+        pass
+    return None
+
+
+def consultar_api_4devs(cpf_limpo, data_nascimento):
+    """Consulta CPF via 4Devs (requer data de nascimento)"""
+    try:
+        url = "https://www.4devs.com.br/ferramentas_online.php"
+        
+        payload = {
+            "acao": "validar_cpf",
+            "txt_cpf": cpf_limpo,
+            "txt_data_nascimento": data_nascimento.replace("/", "-")
+        }
+        
+        response = requests.post(url, data=payload, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("status") == "1":
+                return {
+                    "nome": dados.get("nome"),
+                    "data_nascimento": dados.get("data_nascimento"),
+                    "sexo": dados.get("sexo"),
+                    "nome_mae": dados.get("nome_mae"),
+                    "nome_pai": dados.get("nome_pai"),
+                    "situacao": dados.get("situacao_cpf")
+                }
+    except:
+        pass
+    return None
+
+
 def consulta_cpf():
     print("\n╔══════════════════════════════════════════╗")
     print("║              CONSULTA CPF               ║")
@@ -140,98 +217,60 @@ def consulta_cpf():
     print("\n[~] Consultando dados do CPF...")
 
     cpf_limpo = limpar_cpf(cpf)
+    dados_completos = None
+    api_usada = ""
     
-    # Tentar consulta via BrasilAPI
-    try:
-        url = f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
-        
-        headers = {
-            "User-Agent": "CONKS-Cyber/1.0"
-        }
-        
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            dados = response.json()
-            
-            print("\n╔══════════════════════════════════════════╗")
-            print("║                RESULTADO               ║")
-            print("╠══════════════════════════════════════════╣")
-            
-            # Exibe os dados completos
-            campos = [
-                ("CPF", cpf_limpo),
-                ("Nome", dados.get("nome")),
-                ("Data Nascimento", dados.get("data_nascimento")),
-                ("Sexo", dados.get("sexo")),
-                ("Nome da Mãe", dados.get("nome_mae")),
-                ("Nome do Pai", dados.get("nome_pai")),
-                ("Situação", dados.get("situacao")),
-                ("Data Óbito", dados.get("data_obito")),
-                ("Óbito", "Sim" if dados.get("obito") else "Não")
-            ]
-            
-            for nome, valor in campos:
-                if valor is not None and valor != "":
-                    print(f"║ {nome:<18}: {str(valor):<20} ║")
-            
-            print("╚══════════════════════════════════════════╝")
-            
-            # Verifica se os dados estão completos
-            if dados.get("nome") is None or dados.get("nome_mae") is None:
-                print("\n[!] Dados incompletos. A API pode estar limitada.")
-                print("[i] Tente novamente mais tarde.")
-            
-            return
-            
-        else:
-            print(f"\n[-] Erro ao consultar CPF. Código: {response.status_code}")
-            
-    except requests.exceptions.Timeout:
-        print("\n[-] Tempo limite excedido. Servidor lento.")
-    except requests.exceptions.ConnectionError:
-        print("\n[-] Erro de conexão. Verifique sua internet.")
-    except Exception as e:
-        print(f"\n[-] Erro ao consultar: {str(e)}")
+    # Tentativa 1: BrasilAPI
+    print("\n[~] Tentando BrasilAPI...")
+    dados_completos = consultar_api_brasilapi(cpf_limpo)
+    if dados_completos and dados_completos.get("nome"):
+        api_usada = "BrasilAPI"
     
-    # Fallback: Tentar API alternativa
-    print("\n[~] Tentando API alternativa...")
-    try:
-        url = f"https://api.receitaws.com.br/v1/cpf/{cpf_limpo}"
-        
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            dados = response.json()
-            
-            print("\n╔══════════════════════════════════════════╗")
-            print("║                RESULTADO               ║")
-            print("╠══════════════════════════════════════════╣")
-            
-            campos = [
-                ("CPF", cpf_limpo),
-                ("Nome", dados.get("nome")),
-                ("Situação", dados.get("situacao")),
-                ("Data Nascimento", dados.get("data_nascimento")),
-                ("Data Óbito", dados.get("data_obito")),
-                ("Sexo", dados.get("sexo")),
-                ("Nome da Mãe", dados.get("mae")),
-                ("Nome do Pai", dados.get("pai"))
-            ]
-            
-            for nome, valor in campos:
-                if valor is not None and valor != "":
-                    print(f"║ {nome:<18}: {str(valor):<20} ║")
-            
-            print("╚══════════════════════════════════════════╝")
-            return
-            
-    except Exception as e:
-        print(f"\n[-] Erro na API alternativa: {str(e)}")
+    # Tentativa 2: ReceitaWS
+    if not dados_completos or not dados_completos.get("nome"):
+        print("[~] Tentando ReceitaWS...")
+        dados_completos = consultar_api_receitaws(cpf_limpo)
+        if dados_completos and dados_completos.get("nome"):
+            api_usada = "ReceitaWS"
     
-    # Se todas as APIs falharem
-    print("\n[!] Não foi possível obter os dados completos do CPF.")
-    print("╔══════════════════════════════════════════╗")
+    # Tentativa 3: 4Devs
+    if not dados_completos or not dados_completos.get("nome"):
+        print("[~] Tentando 4Devs...")
+        dados_completos = consultar_api_4devs(cpf_limpo, nascimento)
+        if dados_completos and dados_completos.get("nome"):
+            api_usada = "4Devs"
+    
+    if dados_completos and dados_completos.get("nome"):
+        print(f"\n[+] Dados obtidos via {api_usada}")
+        print("\n╔══════════════════════════════════════════╗")
+        print("║                RESULTADO               ║")
+        print("╠══════════════════════════════════════════╣")
+        
+        campos = [
+            ("CPF", cpf_limpo),
+            ("Nome", dados_completos.get("nome")),
+            ("Data Nascimento", dados_completos.get("data_nascimento")),
+            ("Sexo", dados_completos.get("sexo")),
+            ("Nome da Mãe", dados_completos.get("nome_mae")),
+            ("Nome do Pai", dados_completos.get("nome_pai")),
+            ("Situação", dados_completos.get("situacao")),
+            ("Data Óbito", dados_completos.get("data_obito")),
+            ("Óbito", "Sim" if dados_completos.get("obito") else "Não")
+        ]
+        
+        for nome, valor in campos:
+            if valor is not None and valor != "":
+                valor_str = str(valor)
+                if len(valor_str) > 20:
+                    valor_str = valor_str[:17] + "..."
+                print(f"║ {nome:<18}: {valor_str:<20} ║")
+        
+        print("╚══════════════════════════════════════════╝")
+        return
+    
+    # Se chegou aqui, todas as APIs falharam
+    print("\n[!] Todas as APIs estão indisponíveis no momento.")
+    print("\n╔══════════════════════════════════════════╗")
     print("║                RESULTADO               ║")
     print("╠══════════════════════════════════════════╣")
     print(f"║ CPF: {mascarar_cpf(cpf):<32} ║")
@@ -241,6 +280,11 @@ def consulta_cpf():
     
     print("\n[i] A validação local não confirma a")
     print("[i] situação cadastral na Receita Federal.")
+    print("\n[i] Motivos prováveis:")
+    print("    - APIs gratuitas com limite diário")
+    print("    - Servidor temporariamente offline")
+    print("    - Conexão com a internet instável")
+    print("\n[i] Tente novamente mais tarde.")
 
 
 # ==========================================
