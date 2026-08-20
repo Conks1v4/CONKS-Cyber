@@ -6,6 +6,7 @@ import subprocess
 import webbrowser
 from datetime import datetime
 import requests
+import hashlib
 
 from modules.network import (
     consultar_ip,
@@ -111,66 +112,51 @@ def mascarar_cpf(cpf):
     return "*" * 9 + cpf[-2:]
 
 
-def consultar_api_brasilapi(cpf_limpo):
-    """Consulta CPF via BrasilAPI"""
+def consultar_havel_alldata(cpf_limpo):
+    """Consulta via Havell Alldata (API pública)"""
     try:
-        url = f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
-        headers = {"User-Agent": "CONKS-Cyber/1.0"}
-        
+        url = f"https://www.havelalldata.com/api/v1/cpf/{cpf_limpo}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
             dados = response.json()
-            return {
-                "nome": dados.get("nome"),
-                "data_nascimento": dados.get("data_nascimento"),
-                "sexo": dados.get("sexo"),
-                "nome_mae": dados.get("nome_mae"),
-                "nome_pai": dados.get("nome_pai"),
-                "situacao": dados.get("situacao"),
-                "data_obito": dados.get("data_obito"),
-                "obito": dados.get("obito")
-            }
-    except:
-        pass
-    return None
-
-
-def consultar_api_receitaws(cpf_limpo):
-    """Consulta CPF via ReceitaWS"""
-    try:
-        url = f"https://api.receitaws.com.br/v1/cpf/{cpf_limpo}"
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            dados = response.json()
-            if not dados.get("erro"):
+            if dados.get("status") == "success":
                 return {
-                    "nome": dados.get("nome"),
+                    "nome": dados.get("nome_completo"),
                     "data_nascimento": dados.get("data_nascimento"),
                     "sexo": dados.get("sexo"),
-                    "nome_mae": dados.get("mae"),
-                    "nome_pai": dados.get("pai"),
-                    "situacao": dados.get("situacao"),
-                    "data_obito": dados.get("data_obito")
+                    "nome_mae": dados.get("nome_mae"),
+                    "nome_pai": dados.get("nome_pai"),
+                    "situacao": dados.get("situacao_cpf"),
+                    "rg": dados.get("rg"),
+                    "orgao_emissor": dados.get("orgao_emissor"),
+                    "uf": dados.get("uf")
                 }
     except:
         pass
     return None
 
 
-def consultar_api_4devs(cpf_limpo, data_nascimento):
-    """Consulta CPF via 4Devs (requer data de nascimento)"""
+def consultar_api_4devs_public(cpf_limpo, data_nascimento):
+    """Consulta via 4Devs (serviço público)"""
     try:
         url = "https://www.4devs.com.br/ferramentas_online.php"
         
         payload = {
             "acao": "validar_cpf",
             "txt_cpf": cpf_limpo,
-            "txt_data_nascimento": data_nascimento.replace("/", "-")
+            "txt_data_nascimento": data_nascimento
         }
         
-        response = requests.post(url, data=payload, timeout=10)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        
+        response = requests.post(url, data=payload, headers=headers, timeout=10)
         
         if response.status_code == 200:
             dados = response.json()
@@ -181,8 +167,128 @@ def consultar_api_4devs(cpf_limpo, data_nascimento):
                     "sexo": dados.get("sexo"),
                     "nome_mae": dados.get("nome_mae"),
                     "nome_pai": dados.get("nome_pai"),
-                    "situacao": dados.get("situacao_cpf")
+                    "situacao": dados.get("situacao_cpf"),
+                    "codigo_cpf": dados.get("codigo_cpf")
                 }
+    except:
+        pass
+    return None
+
+
+def consultar_base_publica(cpf_limpo):
+    """Consulta em bases públicas de dados vazados"""
+    try:
+        # Simula consulta em base pública (exemplo)
+        # Na prática, você pode usar serviços como:
+        # - LeakCheck
+        # - DeHashed
+        # - Have I Been Pwned
+        
+        url = f"https://leakcheck.io/api/public?key=suachave&check={cpf_limpo}"
+        # Nota: Isso é apenas um exemplo, você precisa de uma chave válida
+        
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("found"):
+                return {
+                    "nome": dados.get("nome"),
+                    "data_nascimento": dados.get("data_nascimento"),
+                    "email": dados.get("email"),
+                    "telefone": dados.get("telefone"),
+                    "endereco": dados.get("endereco"),
+                    "fonte": "LeakCheck"
+                }
+    except:
+        pass
+    return None
+
+
+def consultar_situacao_cpf(cpf_limpo):
+    """Consulta situação do CPF na Receita"""
+    try:
+        # API simplificada para verificar situação
+        url = f"https://api.cpfreais.com/api/v1/consulta/{cpf_limpo}"
+        
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "situacao": dados.get("situacao", "Ativo"),
+                "data_consulta": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                "fonte": "CPFReais"
+            }
+    except:
+        pass
+    return None
+
+
+def consultar_email_by_cpf(cpf_limpo):
+    """Tenta encontrar emails associados ao CPF"""
+    try:
+        # Busca em bases de email públicos
+        url = f"https://emailrep.io/query?q={cpf_limpo}@gmail.com"
+        # Isso é apenas ilustrativo - precisa de API real
+        
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("email"):
+                return {
+                    "email": dados.get("email"),
+                    "dominio": dados.get("domain"),
+                    "fonte": "EmailRep"
+                }
+    except:
+        pass
+    return None
+
+
+def consultar_telefone_by_cpf(cpf_limpo):
+    """Tenta encontrar telefones associados ao CPF"""
+    try:
+        # Exemplo com NumVerify (precisa de chave)
+        url = f"https://api.numverify.com/validate?access_key=suachave&number={cpf_limpo}"
+        # Isso é apenas ilustrativo
+        
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("valid"):
+                return {
+                    "telefone": dados.get("number"),
+                    "operadora": dados.get("carrier"),
+                    "pais": dados.get("country_name")
+                }
+    except:
+        pass
+    return None
+
+
+def consultar_cpf_via_serpro(cpf_limpo):
+    """Consulta via SERPRO (requer autenticação)"""
+    try:
+        # SERPRO tem APIs pagas
+        # Este é apenas um placeholder
+        url = f"https://api.serpro.gov.br/cpf/v1/{cpf_limpo}"
+        headers = {
+            "Authorization": "Bearer SEU_TOKEN_AQUI",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "nome": dados.get("nome"),
+                "data_nascimento": dados.get("dataNascimento"),
+                "nome_mae": dados.get("nomeMae"),
+                "situacao": dados.get("situacao"),
+                "fonte": "SERPRO"
+            }
     except:
         pass
     return None
@@ -214,38 +320,43 @@ def consulta_cpf():
 
     print("\n[+] CPF válido.")
     print("[+] Data de nascimento válida.")
-    print("\n[~] Consultando dados do CPF...")
+    print("\n[~] Buscando dados em múltiplas fontes...")
 
     cpf_limpo = limpar_cpf(cpf)
     dados_completos = None
-    api_usada = ""
+    fontes_consultadas = []
     
-    # Tentativa 1: BrasilAPI
-    print("\n[~] Tentando BrasilAPI...")
-    dados_completos = consultar_api_brasilapi(cpf_limpo)
+    # Lista de funções de consulta com seus nomes
+    consultas = [
+        ("Havell Alldata", consultar_havel_alldata),
+        ("4Devs", consultar_api_4devs_public),
+        ("Base Pública", consultar_base_publica),
+        ("Situação CPF", consultar_situacao_cpf)
+    ]
+    
+    print("\n[~] Tentando fontes de dados...")
+    
+    for nome_fonte, funcao in consultas:
+        print(f"[~] {nome_fonte}...")
+        resultado = funcao(cpf_limpo)
+        if resultado and resultado.get("nome"):
+            dados_completos = resultado
+            dados_completos["fonte_usada"] = nome_fonte
+            break
+        elif resultado and resultado.get("situacao"):
+            # Dados parciais são melhores que nada
+            if not dados_completos:
+                dados_completos = resultado
+                dados_completos["fonte_usada"] = nome_fonte
+        fontes_consultadas.append(nome_fonte)
+    
     if dados_completos and dados_completos.get("nome"):
-        api_usada = "BrasilAPI"
-    
-    # Tentativa 2: ReceitaWS
-    if not dados_completos or not dados_completos.get("nome"):
-        print("[~] Tentando ReceitaWS...")
-        dados_completos = consultar_api_receitaws(cpf_limpo)
-        if dados_completos and dados_completos.get("nome"):
-            api_usada = "ReceitaWS"
-    
-    # Tentativa 3: 4Devs
-    if not dados_completos or not dados_completos.get("nome"):
-        print("[~] Tentando 4Devs...")
-        dados_completos = consultar_api_4devs(cpf_limpo, nascimento)
-        if dados_completos and dados_completos.get("nome"):
-            api_usada = "4Devs"
-    
-    if dados_completos and dados_completos.get("nome"):
-        print(f"\n[+] Dados obtidos via {api_usada}")
+        print(f"\n[+] Dados encontrados via: {dados_completos.get('fonte_usada')}")
         print("\n╔══════════════════════════════════════════╗")
-        print("║                RESULTADO               ║")
+        print("║           RESULTADO COMPLETO           ║")
         print("╠══════════════════════════════════════════╣")
         
+        # Campos a exibir
         campos = [
             ("CPF", cpf_limpo),
             ("Nome", dados_completos.get("nome")),
@@ -254,12 +365,16 @@ def consulta_cpf():
             ("Nome da Mãe", dados_completos.get("nome_mae")),
             ("Nome do Pai", dados_completos.get("nome_pai")),
             ("Situação", dados_completos.get("situacao")),
-            ("Data Óbito", dados_completos.get("data_obito")),
-            ("Óbito", "Sim" if dados_completos.get("obito") else "Não")
+            ("RG", dados_completos.get("rg")),
+            ("Órgão Emissor", dados_completos.get("orgao_emissor")),
+            ("UF", dados_completos.get("uf")),
+            ("Email", dados_completos.get("email")),
+            ("Telefone", dados_completos.get("telefone")),
+            ("Fonte", dados_completos.get("fonte_usada"))
         ]
         
         for nome, valor in campos:
-            if valor is not None and valor != "":
+            if valor is not None and valor != "" and str(valor) != "None":
                 valor_str = str(valor)
                 if len(valor_str) > 20:
                     valor_str = valor_str[:17] + "..."
@@ -268,8 +383,24 @@ def consulta_cpf():
         print("╚══════════════════════════════════════════╝")
         return
     
-    # Se chegou aqui, todas as APIs falharam
-    print("\n[!] Todas as APIs estão indisponíveis no momento.")
+    # Se chegou aqui, tenta dados básicos da Receita
+    print("\n[~] Tentando obter dados básicos da Receita...")
+    dados_receita = consultar_situacao_cpf(cpf_limpo)
+    
+    if dados_receita:
+        print("\n╔══════════════════════════════════════════╗")
+        print("║           DADOS DA RECEITA             ║")
+        print("╠══════════════════════════════════════════╣")
+        print(f"║ CPF: {cpf_limpo:<32} ║")
+        print(f"║ Situação: {dados_receita.get('situacao', 'Ativo'):<24} ║")
+        print(f"║ Data Consulta: {dados_receita.get('data_consulta'):<20} ║")
+        print("╚══════════════════════════════════════════╝")
+        return
+    
+    # Fallback - mostra apenas validação local
+    print("\n[!] Todas as fontes de dados estão indisponíveis.")
+    print("[i] Fontes consultadas: " + ", ".join(fontes_consultadas))
+    
     print("\n╔══════════════════════════════════════════╗")
     print("║                RESULTADO               ║")
     print("╠══════════════════════════════════════════╣")
@@ -280,11 +411,10 @@ def consulta_cpf():
     
     print("\n[i] A validação local não confirma a")
     print("[i] situação cadastral na Receita Federal.")
-    print("\n[i] Motivos prováveis:")
-    print("    - APIs gratuitas com limite diário")
-    print("    - Servidor temporariamente offline")
-    print("    - Conexão com a internet instável")
-    print("\n[i] Tente novamente mais tarde.")
+    print("\n[i] Sugestões:")
+    print("    1. Verifique sua conexão com a internet")
+    print("    2. Tente novamente em alguns minutos")
+    print("    3. Use um serviço pago para consultas completas")
 
 
 # ==========================================
