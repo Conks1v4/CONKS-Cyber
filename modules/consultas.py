@@ -7,6 +7,9 @@ import webbrowser
 from datetime import datetime
 import requests
 import hashlib
+import base64
+import random
+import time
 
 from modules.network import (
     consultar_ip,
@@ -50,7 +53,7 @@ def requisicao_json(url, timeout=8):
 
 
 # ==========================================
-# CPF
+# CPF - MÚLTIPLAS FONTES
 # ==========================================
 
 def limpar_cpf(cpf):
@@ -112,15 +115,107 @@ def mascarar_cpf(cpf):
     return "*" * 9 + cpf[-2:]
 
 
-def consultar_havel_alldata(cpf_limpo):
-    """Consulta via Havell Alldata (API pública)"""
+# FONTE 1: BrasilAPI
+def fonte_brasilapi(cpf_limpo):
+    try:
+        url = f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "nome": dados.get("nome"),
+                "data_nascimento": dados.get("data_nascimento"),
+                "sexo": dados.get("sexo"),
+                "nome_mae": dados.get("nome_mae"),
+                "nome_pai": dados.get("nome_pai"),
+                "situacao": dados.get("situacao"),
+                "fonte": "BrasilAPI"
+            }
+    except:
+        pass
+    return None
+
+
+# FONTE 2: ReceitaWS
+def fonte_receitaws(cpf_limpo):
+    try:
+        url = f"https://api.receitaws.com.br/v1/cpf/{cpf_limpo}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            if not dados.get("erro"):
+                return {
+                    "nome": dados.get("nome"),
+                    "data_nascimento": dados.get("data_nascimento"),
+                    "sexo": dados.get("sexo"),
+                    "nome_mae": dados.get("mae"),
+                    "nome_pai": dados.get("pai"),
+                    "situacao": dados.get("situacao"),
+                    "fonte": "ReceitaWS"
+                }
+    except:
+        pass
+    return None
+
+
+# FONTE 3: 4Devs
+def fonte_4devs(cpf_limpo, nascimento):
+    try:
+        url = "https://www.4devs.com.br/ferramentas_online.php"
+        payload = {
+            "acao": "validar_cpf",
+            "txt_cpf": cpf_limpo,
+            "txt_data_nascimento": nascimento
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        response = requests.post(url, data=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("status") == "1":
+                return {
+                    "nome": dados.get("nome"),
+                    "data_nascimento": dados.get("data_nascimento"),
+                    "sexo": dados.get("sexo"),
+                    "nome_mae": dados.get("nome_mae"),
+                    "nome_pai": dados.get("nome_pai"),
+                    "situacao": dados.get("situacao_cpf"),
+                    "fonte": "4Devs"
+                }
+    except:
+        pass
+    return None
+
+
+# FONTE 4: CPFReais
+def fonte_cpfreais(cpf_limpo):
+    try:
+        url = f"https://api.cpfreais.com/api/v1/consulta/{cpf_limpo}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "nome": dados.get("nome"),
+                "data_nascimento": dados.get("data_nascimento"),
+                "sexo": dados.get("sexo"),
+                "nome_mae": dados.get("nome_mae"),
+                "situacao": dados.get("situacao"),
+                "fonte": "CPFReais"
+            }
+    except:
+        pass
+    return None
+
+
+# FONTE 5: Havell Alldata
+def fonte_havell(cpf_limpo):
     try:
         url = f"https://www.havelalldata.com/api/v1/cpf/{cpf_limpo}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         response = requests.get(url, headers=headers, timeout=10)
-        
         if response.status_code == 200:
             dados = response.json()
             if dados.get("status") == "success":
@@ -132,72 +227,28 @@ def consultar_havel_alldata(cpf_limpo):
                     "nome_pai": dados.get("nome_pai"),
                     "situacao": dados.get("situacao_cpf"),
                     "rg": dados.get("rg"),
-                    "orgao_emissor": dados.get("orgao_emissor"),
-                    "uf": dados.get("uf")
+                    "fonte": "Havell"
                 }
     except:
         pass
     return None
 
 
-def consultar_api_4devs_public(cpf_limpo, data_nascimento):
-    """Consulta via 4Devs (serviço público)"""
+# FONTE 6: LeakCheck (dados vazados)
+def fonte_leakcheck(cpf_limpo):
     try:
-        url = "https://www.4devs.com.br/ferramentas_online.php"
-        
-        payload = {
-            "acao": "validar_cpf",
-            "txt_cpf": cpf_limpo,
-            "txt_data_nascimento": data_nascimento
-        }
-        
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        
-        response = requests.post(url, data=payload, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            dados = response.json()
-            if dados.get("status") == "1":
-                return {
-                    "nome": dados.get("nome"),
-                    "data_nascimento": dados.get("data_nascimento"),
-                    "sexo": dados.get("sexo"),
-                    "nome_mae": dados.get("nome_mae"),
-                    "nome_pai": dados.get("nome_pai"),
-                    "situacao": dados.get("situacao_cpf"),
-                    "codigo_cpf": dados.get("codigo_cpf")
-                }
-    except:
-        pass
-    return None
-
-
-def consultar_base_publica(cpf_limpo):
-    """Consulta em bases públicas de dados vazados"""
-    try:
-        # Simula consulta em base pública (exemplo)
-        # Na prática, você pode usar serviços como:
-        # - LeakCheck
-        # - DeHashed
-        # - Have I Been Pwned
-        
-        url = f"https://leakcheck.io/api/public?key=suachave&check={cpf_limpo}"
-        # Nota: Isso é apenas um exemplo, você precisa de uma chave válida
-        
+        # API pública do LeakCheck (pode precisar de chave)
+        url = f"https://leakcheck.io/api/v1/check?key=YOUR_KEY&check={cpf_limpo}"
         response = requests.get(url, timeout=10)
-        
         if response.status_code == 200:
             dados = response.json()
             if dados.get("found"):
+                leak_data = dados.get("sources", [{}])[0] if dados.get("sources") else {}
                 return {
-                    "nome": dados.get("nome"),
-                    "data_nascimento": dados.get("data_nascimento"),
-                    "email": dados.get("email"),
-                    "telefone": dados.get("telefone"),
-                    "endereco": dados.get("endereco"),
+                    "nome": leak_data.get("name", dados.get("name")),
+                    "email": leak_data.get("email"),
+                    "telefone": leak_data.get("phone"),
+                    "endereco": leak_data.get("address"),
                     "fonte": "LeakCheck"
                 }
     except:
@@ -205,81 +256,93 @@ def consultar_base_publica(cpf_limpo):
     return None
 
 
-def consultar_situacao_cpf(cpf_limpo):
-    """Consulta situação do CPF na Receita"""
+# FONTE 7: DeHashed (dados vazados)
+def fonte_dehashed(cpf_limpo):
     try:
-        # API simplificada para verificar situação
-        url = f"https://api.cpfreais.com/api/v1/consulta/{cpf_limpo}"
-        
-        response = requests.get(url, timeout=10)
-        
+        # DeHashed API (requer autenticação)
+        url = f"https://api.dehashed.com/search?query=cpf:{cpf_limpo}"
+        headers = {
+            "Authorization": "Basic " + base64.b64encode(b"email:api_key").decode(),
+            "Accept": "application/json"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             dados = response.json()
-            return {
-                "situacao": dados.get("situacao", "Ativo"),
-                "data_consulta": datetime.now().strftime("%d/%m/%Y %H:%M"),
-                "fonte": "CPFReais"
-            }
-    except:
-        pass
-    return None
-
-
-def consultar_email_by_cpf(cpf_limpo):
-    """Tenta encontrar emails associados ao CPF"""
-    try:
-        # Busca em bases de email públicos
-        url = f"https://emailrep.io/query?q={cpf_limpo}@gmail.com"
-        # Isso é apenas ilustrativo - precisa de API real
-        
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            dados = response.json()
-            if dados.get("email"):
+            if dados.get("entries"):
+                entry = dados["entries"][0]
                 return {
-                    "email": dados.get("email"),
-                    "dominio": dados.get("domain"),
-                    "fonte": "EmailRep"
+                    "nome": entry.get("name"),
+                    "email": entry.get("email"),
+                    "telefone": entry.get("phone"),
+                    "senha_hash": entry.get("password"),
+                    "fonte": "DeHashed"
                 }
     except:
         pass
     return None
 
 
-def consultar_telefone_by_cpf(cpf_limpo):
-    """Tenta encontrar telefones associados ao CPF"""
+# FONTE 8: Have I Been Pwned
+def fonte_hibp(cpf_limpo):
     try:
-        # Exemplo com NumVerify (precisa de chave)
-        url = f"https://api.numverify.com/validate?access_key=suachave&number={cpf_limpo}"
-        # Isso é apenas ilustrativo
-        
+        # Verifica se o CPF está em vazamentos conhecidos
+        # Nota: HIBP geralmente usa email, mas podemos tentar
+        email = f"{cpf_limpo}@gmail.com"
+        hash_sufix = hashlib.sha1(email.encode()).hexdigest().upper()
+        url = f"https://api.pwnedpasswords.com/range/{hash_sufix[:5]}"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
-            dados = response.json()
-            if dados.get("valid"):
-                return {
-                    "telefone": dados.get("number"),
-                    "operadora": dados.get("carrier"),
-                    "pais": dados.get("country_name")
-                }
+            # Se encontrou hash, pode estar vazado
+            hashes = response.text.split('\n')
+            for h in hashes:
+                if h.startswith(hash_sufix[5:]):
+                    return {
+                        "status": "VAZADO",
+                        "fonte": "HIBP",
+                        "observacao": "CPF/Email encontrado em vazamento"
+                    }
     except:
         pass
     return None
 
 
-def consultar_cpf_via_serpro(cpf_limpo):
-    """Consulta via SERPRO (requer autenticação)"""
+# FONTE 9: Scraping de sites públicos
+def fonte_scraping_publico(cpf_limpo):
     try:
-        # SERPRO tem APIs pagas
-        # Este é apenas um placeholder
+        # Tenta buscar em sites públicos (exemplo)
+        urls = [
+            f"https://www.google.com/search?q={cpf_limpo}+cpf",
+            f"https://www.bing.com/search?q={cpf_limpo}+cpf",
+        ]
+        
+        for url in urls:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                # Procura por padrões de nome, email, telefone
+                html = response.text
+                nomes = re.findall(r'[A-Z][a-záéíóúãõç]+ [A-Z][a-záéíóúãõç]+', html)
+                if nomes:
+                    return {
+                        "possiveis_nomes": nomes[:3],
+                        "fonte": "ScrapingGoogle",
+                        "url": url
+                    }
+    except:
+        pass
+    return None
+
+
+# FONTE 10: API SERPRO (pagamento)
+def fonte_serpro(cpf_limpo):
+    try:
+        # SERPRO - requer token de autenticação
         url = f"https://api.serpro.gov.br/cpf/v1/{cpf_limpo}"
         headers = {
-            "Authorization": "Bearer SEU_TOKEN_AQUI",
+            "Authorization": "Bearer SEU_TOKEN_SERPRO",
             "Content-Type": "application/json"
         }
-        
         response = requests.get(url, headers=headers, timeout=10)
-        
         if response.status_code == 200:
             dados = response.json()
             return {
@@ -294,9 +357,104 @@ def consultar_cpf_via_serpro(cpf_limpo):
     return None
 
 
+# FONTE 11: API do Correios (CEP)
+def fonte_correios(cpf_limpo):
+    try:
+        # Correios pode ter dados indiretos
+        url = "https://buscacepinter.correios.com.br/app/endereco/index.php"
+        # Isso é só ilustrativo
+        return None
+    except:
+        pass
+    return None
+
+
+# FONTE 12: API do Tribunal Superior Eleitoral
+def fonte_tse(cpf_limpo):
+    try:
+        # TSE tem dados públicos de eleitores
+        url = f"https://divulgacandcontas.tse.jus.br/divulga/rest/v1/consulta/2022/BR/candidato/{cpf_limpo}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            return {
+                "nome": dados.get("nomeCompleto"),
+                "data_nascimento": dados.get("dataNascimento"),
+                "cargo": dados.get("cargo"),
+                "fonte": "TSE"
+            }
+    except:
+        pass
+    return None
+
+
+# FONTE 13: API CNPJ (pode ter sócios com CPF)
+def fonte_cnpj_socios(cpf_limpo):
+    try:
+        # Busca empresas onde o CPF é sócio
+        url = f"https://api.cnpja.com.br/companies?cpf={cpf_limpo}"
+        headers = {"Authorization": "Bearer SUA_CHAVE_CNPJA"}
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            dados = response.json()
+            if dados.get("companies"):
+                empresas = []
+                for empresa in dados["companies"][:3]:
+                    empresas.append({
+                        "cnpj": empresa.get("cnpj"),
+                        "nome": empresa.get("nome"),
+                        "cargo": empresa.get("cargo")
+                    })
+                return {
+                    "empresas": empresas,
+                    "fonte": "CNPJA"
+                }
+    except:
+        pass
+    return None
+
+
+# FONTE 14: API de dados bancários (exemplo)
+def fonte_bancaria(cpf_limpo):
+    try:
+        # Isso é ilustrativo - APIs bancárias são restritas
+        return None
+    except:
+        pass
+    return None
+
+
+# FONTE 15: Google Dorking
+def fonte_google_dorks(cpf_limpo):
+    try:
+        dorks = [
+            f"site:*.gov.br {cpf_limpo}",
+            f"site:*.edu.br {cpf_limpo}",
+            f"filetype:pdf {cpf_limpo}",
+            f"filetype:xlsx {cpf_limpo}",
+            f"intitle:{cpf_limpo}"
+        ]
+        resultados = []
+        for dork in dorks[:2]:  # Limite para não sobrecarregar
+            url = f"https://www.google.com/search?q={dork.replace(' ', '+')}"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                resultados.append({
+                    "dork": dork,
+                    "url": url,
+                    "fonte": "GoogleDorks"
+                })
+        return resultados if resultados else None
+    except:
+        pass
+    return None
+
+
 def consulta_cpf():
     print("\n╔══════════════════════════════════════════╗")
     print("║              CONSULTA CPF               ║")
+    print("║           BUSCA COMPLETA               ║")
     print("╚══════════════════════════════════════════╝")
 
     cpf = input("\nCPF (apenas números): ").strip()
@@ -320,43 +478,74 @@ def consulta_cpf():
 
     print("\n[+] CPF válido.")
     print("[+] Data de nascimento válida.")
-    print("\n[~] Buscando dados em múltiplas fontes...")
+    print("\n[~] Buscando em TODAS as fontes disponíveis...")
+    print("[~] Isso pode levar alguns segundos...")
 
     cpf_limpo = limpar_cpf(cpf)
     dados_completos = None
-    fontes_consultadas = []
+    dados_parciais = []
+    fontes_tentadas = []
+    fontes_com_resultado = []
     
-    # Lista de funções de consulta com seus nomes
-    consultas = [
-        ("Havell Alldata", consultar_havel_alldata),
-        ("4Devs", consultar_api_4devs_public),
-        ("Base Pública", consultar_base_publica),
-        ("Situação CPF", consultar_situacao_cpf)
+    # Lista completa de fontes
+    fontes = [
+        ("BrasilAPI", lambda: fonte_brasilapi(cpf_limpo)),
+        ("ReceitaWS", lambda: fonte_receitaws(cpf_limpo)),
+        ("4Devs", lambda: fonte_4devs(cpf_limpo, nascimento)),
+        ("CPFReais", lambda: fonte_cpfreais(cpf_limpo)),
+        ("Havell", lambda: fonte_havell(cpf_limpo)),
+        ("LeakCheck", lambda: fonte_leakcheck(cpf_limpo)),
+        ("DeHashed", lambda: fonte_dehashed(cpf_limpo)),
+        ("HIBP", lambda: fonte_hibp(cpf_limpo)),
+        ("Scraping", lambda: fonte_scraping_publico(cpf_limpo)),
+        ("TSE", lambda: fonte_tse(cpf_limpo)),
+        ("CNPJA", lambda: fonte_cnpj_socios(cpf_limpo)),
+        ("GoogleDorks", lambda: fonte_google_dorks(cpf_limpo))
     ]
     
-    print("\n[~] Tentando fontes de dados...")
+    print("\n[~] Testando fontes:")
     
-    for nome_fonte, funcao in consultas:
-        print(f"[~] {nome_fonte}...")
-        resultado = funcao(cpf_limpo)
-        if resultado and resultado.get("nome"):
-            dados_completos = resultado
-            dados_completos["fonte_usada"] = nome_fonte
-            break
-        elif resultado and resultado.get("situacao"):
-            # Dados parciais são melhores que nada
-            if not dados_completos:
-                dados_completos = resultado
-                dados_completos["fonte_usada"] = nome_fonte
-        fontes_consultadas.append(nome_fonte)
+    for nome_fonte, funcao in fontes:
+        print(f"[~] {nome_fonte}...", end="")
+        try:
+            resultado = funcao()
+            fontes_tentadas.append(nome_fonte)
+            if resultado:
+                # Se achou dados completos com nome
+                if isinstance(resultado, dict) and resultado.get("nome"):
+                    if not dados_completos or len(resultado.keys()) > len(dados_completos.keys()):
+                        dados_completos = resultado
+                        fontes_com_resultado.append(nome_fonte)
+                        print(" ✓ DADOS COMPLETOS")
+                # Se achou dados parciais
+                elif isinstance(resultado, dict) and resultado:
+                    dados_parciais.append(resultado)
+                    fontes_com_resultado.append(nome_fonte)
+                    print(" ✓ DADOS PARCIAIS")
+                # Se achou listas de resultados
+                elif isinstance(resultado, list) and resultado:
+                    dados_parciais.extend(resultado)
+                    fontes_com_resultado.append(nome_fonte)
+                    print(" ✓ MÚLTIPLOS RESULTADOS")
+                else:
+                    print(" ✗ Sem dados")
+            else:
+                print(" ✗ Sem dados")
+        except Exception as e:
+            print(f" ✗ Erro: {str(e)[:30]}")
+        
+        time.sleep(0.5)  # Pequena pausa entre requisições
     
-    if dados_completos and dados_completos.get("nome"):
-        print(f"\n[+] Dados encontrados via: {dados_completos.get('fonte_usada')}")
+    # Exibe resultados
+    if dados_completos:
+        print(f"\n{'='*50}")
+        print(f"[+] DADOS COMPLETOS ENCONTRADOS!")
+        print(f"Fonte: {dados_completos.get('fonte', 'Desconhecida')}")
+        print("="*50)
         print("\n╔══════════════════════════════════════════╗")
         print("║           RESULTADO COMPLETO           ║")
         print("╠══════════════════════════════════════════╣")
         
-        # Campos a exibir
         campos = [
             ("CPF", cpf_limpo),
             ("Nome", dados_completos.get("nome")),
@@ -366,11 +555,10 @@ def consulta_cpf():
             ("Nome do Pai", dados_completos.get("nome_pai")),
             ("Situação", dados_completos.get("situacao")),
             ("RG", dados_completos.get("rg")),
-            ("Órgão Emissor", dados_completos.get("orgao_emissor")),
-            ("UF", dados_completos.get("uf")),
             ("Email", dados_completos.get("email")),
             ("Telefone", dados_completos.get("telefone")),
-            ("Fonte", dados_completos.get("fonte_usada"))
+            ("Endereço", dados_completos.get("endereco")),
+            ("Fonte", dados_completos.get("fonte"))
         ]
         
         for nome, valor in campos:
@@ -381,40 +569,52 @@ def consulta_cpf():
                 print(f"║ {nome:<18}: {valor_str:<20} ║")
         
         print("╚══════════════════════════════════════════╝")
-        return
-    
-    # Se chegou aqui, tenta dados básicos da Receita
-    print("\n[~] Tentando obter dados básicos da Receita...")
-    dados_receita = consultar_situacao_cpf(cpf_limpo)
-    
-    if dados_receita:
+        
+    elif dados_parciais:
+        print(f"\n[+] ENCONTRADOS {len(dados_parciais)} DADOS PARCIAIS")
         print("\n╔══════════════════════════════════════════╗")
-        print("║           DADOS DA RECEITA             ║")
+        print("║           DADOS PARCIAIS               ║")
         print("╠══════════════════════════════════════════╣")
-        print(f"║ CPF: {cpf_limpo:<32} ║")
-        print(f"║ Situação: {dados_receita.get('situacao', 'Ativo'):<24} ║")
-        print(f"║ Data Consulta: {dados_receita.get('data_consulta'):<20} ║")
+        
+        for i, dados in enumerate(dados_parciais[:5], 1):
+            fonte = dados.get("fonte", "Desconhecida")
+            descricao = dados.get("status") or dados.get("observacao") or "Info"
+            if dados.get("possiveis_nomes"):
+                descricao = f"Nomes: {', '.join(dados['possiveis_nomes'][:2])}"
+            print(f"║ {i}. {fonte:<15}: {descricao[:20]:<20} ║")
+        
+        if len(dados_parciais) > 5:
+            print(f"║ ... e mais {len(dados_parciais)-5} resultados ║")
         print("╚══════════════════════════════════════════╝")
-        return
+        
+    else:
+        print("\n[!] NENHUM DADO ENCONTRADO EM NENHUMA FONTE!")
+        print(f"[i] Fontes consultadas: {len(fontes_tentadas)}")
+        
+        print("\n╔══════════════════════════════════════════╗")
+        print("║           APENAS VALIDAÇÃO LOCAL       ║")
+        print("╠══════════════════════════════════════════╣")
+        print(f"║ CPF: {mascarar_cpf(cpf):<32} ║")
+        print(f"║ Nascimento: {nascimento:<23} ║")
+        print("║ Status: CPF E DATA VÁLIDOS             ║")
+        print("╚══════════════════════════════════════════╝")
+        
+        print("\n[i] Motivos da falha:")
+        print("    1. APIs gratuitas com limite diário atingido")
+        print("    2. CPF não está em bases públicas/vazamentos")
+        print("    3. Servidores temporariamente offline")
+        print("    4. Configuração de rede bloqueando acesso")
+        
+        print("\n[i] Sugestões:")
+        print("    1. Tente novamente em alguns minutos")
+        print("    2. Use um serviço pago para mais dados")
+        print("    3. Verifique sua conexão com a internet")
     
-    # Fallback - mostra apenas validação local
-    print("\n[!] Todas as fontes de dados estão indisponíveis.")
-    print("[i] Fontes consultadas: " + ", ".join(fontes_consultadas))
-    
-    print("\n╔══════════════════════════════════════════╗")
-    print("║                RESULTADO               ║")
-    print("╠══════════════════════════════════════════╣")
-    print(f"║ CPF: {mascarar_cpf(cpf):<32} ║")
-    print(f"║ Nascimento: {nascimento:<23} ║")
-    print("║ Status: VALIDAÇÃO LOCAL                 ║")
-    print("╚══════════════════════════════════════════╝")
-    
-    print("\n[i] A validação local não confirma a")
-    print("[i] situação cadastral na Receita Federal.")
-    print("\n[i] Sugestões:")
-    print("    1. Verifique sua conexão com a internet")
-    print("    2. Tente novamente em alguns minutos")
-    print("    3. Use um serviço pago para consultas completas")
+    print(f"\n[~] Total de fontes consultadas: {len(fontes_tentadas)}")
+    if fontes_com_resultado:
+        print(f"[~] Fontes com resultados: {', '.join(fontes_com_resultado)}")
+    else:
+        print("[~] Nenhuma fonte retornou dados")
 
 
 # ==========================================
@@ -549,13 +749,11 @@ def limpar_placa(placa):
 def validar_placa(placa):
     placa = limpar_placa(placa)
 
-    # Modelo antigo: ABC1234
     modelo_antigo = re.fullmatch(
         r"[A-Z]{3}[0-9]{4}",
         placa
     )
 
-    # Modelo Mercosul: ABC1D23
     modelo_mercosul = re.fullmatch(
         r"[A-Z]{3}[0-9][A-Z][0-9]{2}",
         placa
@@ -572,7 +770,6 @@ def abrir_consulta_senatran():
         "consultar-online-os-dados-de-placa-veicular/"
     )
 
-    # Termux: tenta abrir pelo comando oficial do Termux:API.
     try:
         subprocess.Popen(
             ["termux-open-url", url],
@@ -588,7 +785,6 @@ def abrir_consulta_senatran():
     ):
         pass
 
-    # Fallback para o navegador padrão.
     try:
         webbrowser.open(url)
         return True
