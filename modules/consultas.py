@@ -5,6 +5,7 @@ import re
 import subprocess
 import webbrowser
 from datetime import datetime
+import requests
 
 from modules.network import (
     consultar_ip,
@@ -115,10 +116,8 @@ def consulta_cpf():
     print("║              CONSULTA CPF               ║")
     print("╚══════════════════════════════════════════╝")
 
-    cpf = input("\nCPF: ").strip()
-    nascimento = input(
-        "Data de nascimento (DD/MM/AAAA): "
-    ).strip()
+    cpf = input("\nCPF (apenas números): ").strip()
+    nascimento = input("Data de nascimento (DD/MM/AAAA): ").strip()
 
     if not cpf:
         print("\n[!] Digite um CPF.")
@@ -138,23 +137,110 @@ def consulta_cpf():
 
     print("\n[+] CPF válido.")
     print("[+] Data de nascimento válida.")
+    print("\n[~] Consultando dados do CPF...")
 
-    print("\n╔══════════════════════════════════════════╗")
+    cpf_limpo = limpar_cpf(cpf)
+    
+    # Tentar consulta via BrasilAPI
+    try:
+        url = f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
+        
+        headers = {
+            "User-Agent": "CONKS-Cyber/1.0"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            
+            print("\n╔══════════════════════════════════════════╗")
+            print("║                RESULTADO               ║")
+            print("╠══════════════════════════════════════════╣")
+            
+            # Exibe os dados completos
+            campos = [
+                ("CPF", cpf_limpo),
+                ("Nome", dados.get("nome")),
+                ("Data Nascimento", dados.get("data_nascimento")),
+                ("Sexo", dados.get("sexo")),
+                ("Nome da Mãe", dados.get("nome_mae")),
+                ("Nome do Pai", dados.get("nome_pai")),
+                ("Situação", dados.get("situacao")),
+                ("Data Óbito", dados.get("data_obito")),
+                ("Óbito", "Sim" if dados.get("obito") else "Não")
+            ]
+            
+            for nome, valor in campos:
+                if valor is not None and valor != "":
+                    print(f"║ {nome:<18}: {str(valor):<20} ║")
+            
+            print("╚══════════════════════════════════════════╝")
+            
+            # Verifica se os dados estão completos
+            if dados.get("nome") is None or dados.get("nome_mae") is None:
+                print("\n[!] Dados incompletos. A API pode estar limitada.")
+                print("[i] Tente novamente mais tarde.")
+            
+            return
+            
+        else:
+            print(f"\n[-] Erro ao consultar CPF. Código: {response.status_code}")
+            
+    except requests.exceptions.Timeout:
+        print("\n[-] Tempo limite excedido. Servidor lento.")
+    except requests.exceptions.ConnectionError:
+        print("\n[-] Erro de conexão. Verifique sua internet.")
+    except Exception as e:
+        print(f"\n[-] Erro ao consultar: {str(e)}")
+    
+    # Fallback: Tentar API alternativa
+    print("\n[~] Tentando API alternativa...")
+    try:
+        url = f"https://api.receitaws.com.br/v1/cpf/{cpf_limpo}"
+        
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            dados = response.json()
+            
+            print("\n╔══════════════════════════════════════════╗")
+            print("║                RESULTADO               ║")
+            print("╠══════════════════════════════════════════╣")
+            
+            campos = [
+                ("CPF", cpf_limpo),
+                ("Nome", dados.get("nome")),
+                ("Situação", dados.get("situacao")),
+                ("Data Nascimento", dados.get("data_nascimento")),
+                ("Data Óbito", dados.get("data_obito")),
+                ("Sexo", dados.get("sexo")),
+                ("Nome da Mãe", dados.get("mae")),
+                ("Nome do Pai", dados.get("pai"))
+            ]
+            
+            for nome, valor in campos:
+                if valor is not None and valor != "":
+                    print(f"║ {nome:<18}: {str(valor):<20} ║")
+            
+            print("╚══════════════════════════════════════════╝")
+            return
+            
+    except Exception as e:
+        print(f"\n[-] Erro na API alternativa: {str(e)}")
+    
+    # Se todas as APIs falharem
+    print("\n[!] Não foi possível obter os dados completos do CPF.")
+    print("╔══════════════════════════════════════════╗")
     print("║                RESULTADO               ║")
     print("╠══════════════════════════════════════════╣")
-    print(
-        f"║ CPF: {mascarar_cpf(cpf):<32} ║"
-    )
-    print(
-        f"║ Nascimento: {nascimento:<23} ║"
-    )
+    print(f"║ CPF: {mascarar_cpf(cpf):<32} ║")
+    print(f"║ Nascimento: {nascimento:<23} ║")
     print("║ Status: VALIDAÇÃO LOCAL                 ║")
     print("╚══════════════════════════════════════════╝")
-
-    print(
-        "\n[i] A validação local não confirma a"
-        "\n[i] situação cadastral na Receita Federal."
-    )
+    
+    print("\n[i] A validação local não confirma a")
+    print("[i] situação cadastral na Receita Federal.")
 
 
 # ==========================================
