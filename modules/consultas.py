@@ -662,4 +662,402 @@ def consultar_cnpj(cnpj):
         return None
 
     url = (
-  
+        "https://brasilapi.com.br/api/cnpj/v1/"
+        + cnpj
+    )
+
+    return requisicao_json(url)
+
+
+def mostrar_cnpj(dados):
+    print("\n╔══════════════════════════════════════════╗")
+    print("║             RESULTADO CNPJ             ║")
+    print("╠══════════════════════════════════════════╣")
+
+    campos = [
+        ("CNPJ", "cnpj"),
+        ("Razão Social", "razao_social"),
+        ("Nome Fantasia", "nome_fantasia"),
+        ("Situação", "descricao_situacao_cadastral"),
+        ("Abertura", "data_inicio_atividade"),
+        ("Porte", "porte"),
+        ("Natureza", "natureza_juridica"),
+        ("Município", "municipio"),
+        ("UF", "uf"),
+        ("CEP", "cep")
+    ]
+
+    for nome, chave in campos:
+        valor = dados.get(chave)
+
+        if valor:
+            print(
+                f"║ {nome:<18}: "
+                f"{str(valor)[:20]:<20} ║"
+            )
+
+    print("╚══════════════════════════════════════════╝")
+
+
+def consulta_cnpj_menu():
+    print("\n╔══════════════════════════════════════════╗")
+    print("║             CONSULTA CNPJ               ║")
+    print("╚══════════════════════════════════════════╝")
+    
+    cnpj = input("\nDigite o CNPJ: ").strip()
+
+    if not cnpj:
+        print("\n[!] Digite um CNPJ.")
+        return
+
+    if not validar_cnpj_local(cnpj):
+        print("\n[-] CNPJ inválido.")
+        return
+
+    print("\n[~] Consultando CNPJ...")
+
+    dados = consultar_cnpj(cnpj)
+
+    if not dados:
+        print(
+            "\n[-] CNPJ não encontrado "
+            "ou serviço indisponível."
+        )
+        return
+
+    mostrar_cnpj(dados)
+
+
+# ==========================================
+# VEÍCULO
+# ==========================================
+
+def limpar_placa(placa):
+    return re.sub(r"[^A-Za-z0-9]", "", placa).upper()
+
+
+def validar_placa(placa):
+    placa = limpar_placa(placa)
+
+    modelo_antigo = re.fullmatch(
+        r"[A-Z]{3}[0-9]{4}",
+        placa
+    )
+
+    modelo_mercosul = re.fullmatch(
+        r"[A-Z]{3}[0-9][A-Z][0-9]{2}",
+        placa
+    )
+
+    return bool(
+        modelo_antigo or modelo_mercosul
+    )
+
+
+def abrir_consulta_senatran():
+    url = (
+        "https://www.gov.br/pt-br/servicos/"
+        "consultar-online-os-dados-de-placa-veicular/"
+    )
+
+    try:
+        subprocess.Popen(
+            ["termux-open-url", url],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        return True
+
+    except (
+        FileNotFoundError,
+        OSError
+    ):
+        pass
+
+    try:
+        webbrowser.open(url)
+        return True
+
+    except Exception:
+        return False
+
+
+def consulta_veiculo():
+    print("\n╔══════════════════════════════════════════╗")
+    print("║            CONSULTA VEÍCULO             ║")
+    print("╠══════════════════════════════════════════╣")
+    print("║ Consulta oficial SENATRAN               ║")
+    print("╚══════════════════════════════════════════╝")
+
+    placa = input("\nPlaca: ").strip()
+
+    if not placa:
+        print("\n[!] Digite uma placa.")
+        return
+
+    placa = limpar_placa(placa)
+
+    if not validar_placa(placa):
+        print("\n[-] Formato de placa inválido.")
+        print("[i] Exemplos: ABC1234 ou ABC1D23")
+        return
+
+    print(f"\n[+] Placa reconhecida: {placa}")
+
+    print(
+        "\n[i] A consulta oficial da SENATRAN"
+        "\n[i] exige o número de série do QR Code"
+        "\n[i] da placa Mercosul."
+    )
+
+    serie = input(
+        "\nNúmero de série do QR Code "
+        "(ENTER para abrir o portal): "
+    ).strip()
+
+    print("\n[~] Abrindo consulta oficial...")
+
+    abriu = abrir_consulta_senatran()
+
+    if abriu:
+        print("\n[+] Portal oficial aberto.")
+        print(
+            "[i] Informe a placa e o número de série "
+            "do QR Code no portal."
+        )
+    else:
+        print(
+            "\n[-] Não foi possível abrir o navegador."
+        )
+        print(
+            "[i] Acesse manualmente o portal oficial "
+            "da SENATRAN."
+        )
+
+    if serie:
+        print(
+            "\n[i] Placa informada: "
+            f"{placa}"
+        )
+        print(
+            "[i] O código do QR Code foi recebido "
+            "apenas localmente pelo painel."
+        )
+
+
+# ==========================================
+# DOMÍNIO
+# ==========================================
+
+def consulta_dominio_menu():
+    dominio = input("\nDigite o domínio: ").strip()
+
+    if not dominio:
+        print("\n[!] Digite um domínio.")
+        return
+
+    if not dominio_valido(dominio):
+        print("\n[-] Domínio inválido.")
+        return
+
+    print("\n[~] Consultando domínio...")
+
+    resultado = consultar_dominio(dominio)
+
+    if not resultado:
+        print(
+            "\n[-] Não foi possível consultar o domínio."
+        )
+        return
+
+    print("\n╔══════════════════════════════════════════╗")
+    print("║            RESULTADO DOMÍNIO            ║")
+    print("╠══════════════════════════════════════════╣")
+
+    print(
+        f"║ Domínio: {resultado['dominio']:<29} ║"
+    )
+
+    print("║ IPs:                                     ║")
+
+    for ip in resultado["ips"]:
+        print(f"║   - {ip:<34} ║")
+
+    if resultado["aliases"]:
+        print("║ Aliases:                                 ║")
+
+        for alias in resultado["aliases"]:
+            print(f"║   - {alias:<34} ║")
+
+    print("╚══════════════════════════════════════════╝")
+
+
+# ==========================================
+# IP
+# ==========================================
+
+def consulta_ip_menu():
+    ip = input("\nDigite o IP: ").strip()
+
+    if not ip:
+        print("\n[!] Digite um IP.")
+        return
+
+    if not ip_valido(ip):
+        print("\n[-] IP inválido.")
+        return
+
+    print("\n[~] Consultando IP...")
+
+    dados = consultar_ip(ip)
+
+    if not dados:
+        print(
+            "\n[-] Não foi possível consultar esse IP."
+        )
+        return
+
+    connection = dados.get("connection") or {}
+    timezone = dados.get("timezone") or {}
+
+    print("\n╔══════════════════════════════════════════╗")
+    print("║              RESULTADO IP               ║")
+    print("╠══════════════════════════════════════════╣")
+
+    campos = [
+        ("IP", dados.get("ip")),
+        ("Tipo", dados.get("type")),
+        ("Continente", dados.get("continent")),
+        ("País", dados.get("country")),
+        ("Código", dados.get("country_code")),
+        ("Região", dados.get("region")),
+        ("Cidade", dados.get("city")),
+        ("CEP", dados.get("postal")),
+        ("Latitude", dados.get("latitude")),
+        ("Longitude", dados.get("longitude")),
+        ("ASN", connection.get("asn")),
+        ("Organização", connection.get("org")),
+        ("ISP", connection.get("isp")),
+        ("Domínio", connection.get("domain")),
+        ("Timezone", timezone.get("id"))
+    ]
+
+    for nome, valor in campos:
+        if valor is not None and valor != "":
+            print(
+                f"║ {nome:<18}: "
+                f"{str(valor)[:20]:<20} ║"
+            )
+
+    print("╚══════════════════════════════════════════╝")
+    print("\n[i] A localização de IP é aproximada.")
+
+
+# ==========================================
+# DNS
+# ==========================================
+
+def consulta_dns_menu():
+    dominio = input("\nDigite o domínio: ").strip()
+
+    if not dominio:
+        print("\n[!] Digite um domínio.")
+        return
+
+    if not dominio_valido(dominio):
+        print("\n[-] Domínio inválido.")
+        return
+
+    print("\n[~] Consultando DNS...")
+
+    resultado = consultar_dns(dominio)
+
+    if not resultado:
+        print(
+            "\n[-] Não foi possível consultar o DNS."
+        )
+        return
+
+    print("\n╔══════════════════════════════════════════╗")
+    print("║              RESULTADO DNS              ║")
+    print("╠══════════════════════════════════════════╣")
+
+    print(
+        f"║ Domínio: {resultado['dominio']:<29} ║"
+    )
+
+    print("║ IPs:                                     ║")
+
+    for ip in resultado["ips"]:
+        print(f"║   - {ip:<34} ║")
+
+    if resultado["aliases"]:
+        print("║ Aliases:                                 ║")
+
+        for alias in resultado["aliases"]:
+            print(f"║   - {alias:<34} ║")
+
+    print("╚══════════════════════════════════════════╝")
+
+
+# ==========================================
+# MENU CONSULTAS
+# ==========================================
+
+def menu_consultas():
+    while True:
+
+        print("\n╔══════════════════════════════════════╗")
+        print("║              CONSULTAS              ║")
+        print("╠══════════════════════════════════════╣")
+        print("║ [1] Consultar CPF                   ║")
+        print("║ [2] Consultar CNPJ                  ║")
+        print("║ [3] Consultar Veículo               ║")
+        print("║ [4] Consultar Domínio               ║")
+        print("║ [5] Consultar IP                    ║")
+        print("║ [6] Consultar DNS                   ║")
+        print("║ [7] ⚡ Shoot Down (Derrubar)        ║")
+        print("║ [8] Atualizar Painel                ║")
+        print("║ [0] Voltar                           ║")
+        print("╚══════════════════════════════════════╝")
+
+        opcao = input(
+            "\nCONKS@Consultas > "
+        ).strip()
+
+        if opcao == "1":
+            consulta_cpf()
+
+        elif opcao == "2":
+            consulta_cnpj_menu()
+
+        elif opcao == "3":
+            consulta_veiculo()
+
+        elif opcao == "4":
+            consulta_dominio_menu()
+
+        elif opcao == "5":
+            consulta_ip_menu()
+
+        elif opcao == "6":
+            consulta_dns_menu()
+
+        elif opcao == "7":
+            derrubar_geral()
+
+        elif opcao == "8":
+            print("\n[~] Atualizando painel...")
+            print("[i] Função de atualização em desenvolvimento.")
+            print("[+] Painel atualizado com sucesso!")
+
+        elif opcao == "0":
+            break
+
+        else:
+            print("\n[!] Opção inválida.")
+
+        input(
+            "\nPressione ENTER para continuar..."
+        )
