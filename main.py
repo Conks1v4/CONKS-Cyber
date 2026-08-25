@@ -612,7 +612,13 @@ def menu_principal():
         )
 
         linha_caixa(
-            "[7] Atualizar painel",
+            "[7] ⚡ Shoot Down",
+            RED,
+            True
+        )
+
+        linha_caixa(
+            "[8] Atualizar painel",
             BLUE,
             True
         )
@@ -728,10 +734,35 @@ def menu_principal():
                 )
 
         # ==================================
-        # ATUALIZAR
+        # SHOOT DOWN (NOVO!)
         # ==================================
 
         elif opcao == "7":
+
+            limpar_tela()
+
+            try:
+
+                from modules.consultas import derrubar_geral
+
+                derrubar_geral()
+
+            except ImportError:
+
+                erro(
+                    "Função Shoot Down não encontrada."
+                )
+
+                input(
+                    "\nPressione ENTER "
+                    "para continuar..."
+                )
+
+        # ==================================
+        # ATUALIZAR
+        # ==================================
+
+        elif opcao == "8":
 
             atualizar_painel()
 
